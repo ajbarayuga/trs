@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+
+  /* Modern Shadcn Palette */
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.55 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(at 0% 0%, oklch(0.98 0 0) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, oklch(0.96 0 0) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* HEADINGS: Non-caps, Bold (700) */
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-heading {
+    font-family: var(--font-heading);
+    font-weight: 700 !important;
+    text-transform: none !important;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  button,
+  [role="button"],
+  input[type="checkbox"],
+  label {
+    cursor: pointer !important;
+  }
+}
