@@ -14,7 +14,7 @@ import type { QuoteFormData } from "@/schema/quote";
 import type { LineItem } from "@/lib/calculateSOW";
 
 interface StepFiveSuccessProps {
-  onReset: () => void;
+  onReset?: () => void;
   quoteData: QuoteFormData;
   items: LineItem[];
   subtotal: number;
@@ -23,7 +23,6 @@ interface StepFiveSuccessProps {
 }
 
 export function StepFiveSuccess({
-  onReset,
   quoteData,
   items,
   subtotal,
