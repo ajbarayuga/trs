@@ -42,7 +42,7 @@ export const calculateSOW = (data: QuoteFormData) => {
 
   const R = RATES; // shorthand
 
-  const round = (n: number) => Math.round(n * 100) / 100;
+  const round = (n: number) => Number(n.toFixed(2));
 
   const addItem = (
     name: string,
@@ -69,6 +69,8 @@ export const calculateSOW = (data: QuoteFormData) => {
   // We accumulate only labor totals so the holiday multiplier applies to labor
   // only (not equipment or post-production), and rush fee applies to everything.
   let laborSubtotal = 0;
+  let productionLeadHourlySubtotal = 0;
+  let productionLeadHourlyHours = 0;
 
   const addLaborItem = (
     name: string,
@@ -82,10 +84,25 @@ export const calculateSOW = (data: QuoteFormData) => {
     laborSubtotal += total;
   };
 
+  const addProductionLeadItem = (desc: string, qtyHours: number) => {
+    const roundedHours = Math.max(1, Math.round(qtyHours));
+    addLaborItem(
+      "-- Production Lead (Hourly)",
+      desc,
+      roundedHours,
+      "hrs",
+      R.labor.productionLead,
+    );
+    productionLeadHourlySubtotal += round(roundedHours * R.labor.productionLead);
+    productionLeadHourlyHours += roundedHours;
+  };
+
   const eventDuration = data.hasDuration ? (data.durationHours ?? 4) : 4;
   const hasBuiltInAudio = data.builtInAV?.includes("audio");
   const hasBuiltInPJ = data.builtInAV?.includes("projector");
   const hasBuiltInTVs = data.builtInAV?.includes("tvs");
+  const hasAnyCoreAVService =
+    isStreamingActive || isPAActive || activeVideoTypes.length > 0;
 
   // ── 1. VIDEO PRODUCTION ──────────────────────────────────────────────────
 
@@ -128,13 +145,12 @@ export const calculateSOW = (data: QuoteFormData) => {
 
     if (activeVideoTypes.includes("podcast")) {
       const episodes = Math.max(1, data.podcastEpisodes ?? 1);
-      // FIX T1-2: Podcast edit = same rate as lecture w/ PPT per spec
       addItem(
         "Podcast Editing",
         `Edit for ${episodes} episode(s)`,
         episodes,
         "unit",
-        R.postProduction.lectureEditWithPPT,
+        R.postProduction.podcastEdit,
       );
     }
 
@@ -209,13 +225,7 @@ export const calculateSOW = (data: QuoteFormData) => {
       // FIX T1-1: First person on a solo job is always a Production Lead (spec image 10)
       // billed hourly. "Video Tech" was the wrong role and the wrong rate ($95 vs $117.99).
       // PL is strictly hourly — no day-rate minimum.
-      addLaborItem(
-        "Production Lead (Lecture)",
-        "1.5h Setup / 45m Packup",
-        lectureHrs,
-        "hrs",
-        R.labor.productionLead,
-      );
+      addProductionLeadItem("1.5h Setup / 45m Packup", lectureHrs);
       addItem(
         "Lecture Editing",
         `${talkCount} talk(s)`,
@@ -298,13 +308,15 @@ export const calculateSOW = (data: QuoteFormData) => {
     const operatorDesc = data.lectureFromStream
       ? `${billedOperators} op(s) @ 2.25h setup/strike (covers lecture recording)`
       : `${billedOperators} op(s) @ 2.25h setup/strike`;
-    addLaborItem(
-      "Camera Operator",
-      operatorDesc,
-      billedOperators,
-      "person",
-      R.labor.cameraOperator * techHrs(camOpHrs),
-    );
+    if (camCount > 1) {
+      addLaborItem(
+        "Camera Operator",
+        operatorDesc,
+        billedOperators,
+        "person",
+        R.labor.cameraOperator * techHrs(camOpHrs),
+      );
+    }
 
     if (data.streamGraphics)
       addItem(
@@ -316,12 +328,33 @@ export const calculateSOW = (data: QuoteFormData) => {
       );
     if (!data.diyStream)
       addItem(
-        "Stream Link Setup",
-        "Destination Config",
+          "Zoom Setup",
+          "Destination platform setup and host config",
         1,
         "flat",
         R.streaming.streamLinkSetup,
       );
+
+    addProductionLeadItem("Streaming production lead", eventDuration + 4.5);
+  }
+
+  // Required misc kit for onsite productions.
+  // Use half-day variant only for short, video-only live recordings.
+  if (data.eventType === "live" && hasAnyCoreAVService) {
+    const isShortVideoOnlyJob =
+      activeVideoTypes.length > 0 &&
+      !isStreamingActive &&
+      !isPAActive &&
+      eventDuration <= 4;
+    addItem(
+      isShortVideoOnlyJob ? "AV Essential Kit (Half Day)" : "AV Essential Kit",
+      "Required accessories for onsite production",
+      1,
+      "set",
+      isShortVideoOnlyJob
+        ? R.equipment.avEssentialKitHalfDay
+        : R.equipment.avEssentialKit,
+    );
   }
 
   // ── 3. SOCIAL SHORTS ─────────────────────────────────────────────────────
@@ -364,7 +397,6 @@ export const calculateSOW = (data: QuoteFormData) => {
         "set",
         isOutdoor ? R.equipment.outdoorAudioKit : R.equipment.indoorAudioKit,
       );
-      if (isOutdoor) needsTrucking = true;
     }
 
     // Speaker algorithm: base kit covers first 100 people, +1 speaker per 100 after
@@ -450,6 +482,13 @@ export const calculateSOW = (data: QuoteFormData) => {
         data.monitors ?? 1,
         "unit",
         R.equipment.stageMonitor,
+      );
+    }
+
+    if (!isStreamingActive && activeVideoTypes.length === 0) {
+      addProductionLeadItem(
+        "Event A/V production lead",
+        eventDuration + (isOutdoor ? 4.5 : 4),
       );
     }
   }
@@ -734,6 +773,24 @@ export const calculateSOW = (data: QuoteFormData) => {
       1,
       "flat",
       round(preRushSubtotal * RUSH_FEE_RATE),
+    );
+  }
+
+  // Emory-style PL discount lane from the new pricing templates:
+  // - 10% off production lead hourly rows
+  // - generally applied to partnered/annual clients or large yearly accounts
+  const org = (data.organization ?? "").toLowerCase();
+  const qualifiesForPlDiscount =
+    productionLeadHourlySubtotal > 0 &&
+    (org.includes("emory") || items.reduce((s, i) => s + i.total, 0) >= 10_000);
+  if (qualifiesForPlDiscount) {
+    const discountRatePerHour = Math.round(R.labor.productionLead * 0.1 * 1000) / 1000;
+    addItem(
+      "DISCOUNT",
+      "Discount - Production Lead (10% off hourly rate) for qualifying clients",
+      1,
+      "flat",
+      round(-productionLeadHourlyHours * discountRatePerHour),
     );
   }
 

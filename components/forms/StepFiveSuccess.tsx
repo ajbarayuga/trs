@@ -3,9 +3,7 @@
 import { useState } from "react";
 import {
   CheckCircle2,
-  Calendar,
   FileDown,
-  ArrowRight,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,15 +27,19 @@ export function StepFiveSuccess({
   warning,
   refNumber,
 }: StepFiveSuccessProps) {
-  const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingWord, setDownloadingWord] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const handleDownload = async () => {
-    setDownloading(true);
+  const handleDownload = async (format: "pdf" | "docx") => {
+    if (format === "pdf") setDownloadingPdf(true);
+    if (format === "docx") setDownloadingWord(true);
     setDownloadError(null);
 
     try {
-      const res = await fetch("/api/generate-pdf", {
+      const endpoint =
+        format === "pdf" ? "/api/generate-pdf" : "/api/generate-docx";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...quoteData, items, subtotal }),
@@ -52,9 +54,10 @@ export function StepFiveSuccess({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `quote-${(quoteData.eventName ?? "estimate")
+      const fileBase = `quote-${(quoteData.eventName ?? "estimate")
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")}.pdf`;
+        .replace(/[^a-z0-9]+/g, "-")}`;
+      a.download = `${fileBase}.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -66,7 +69,8 @@ export function StepFiveSuccess({
           : "Download failed. Please try again.",
       );
     } finally {
-      setDownloading(false);
+      if (format === "pdf") setDownloadingPdf(false);
+      if (format === "docx") setDownloadingWord(false);
     }
   };
 
@@ -110,57 +114,55 @@ export function StepFiveSuccess({
       </div>
 
       {/* ── Action cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-        <Card className="p-6 border-2 border-primary/10 hover:border-primary/30 transition-all group space-y-3">
-          <div className="w-10 h-10 rounded-sm bg-primary/5 flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-primary" />
-          </div>
-          <h4 className="font-bold uppercase tracking-tight text-lg">
-            Lock in your date
-          </h4>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Ready to move forward? Schedule a 15-minute production sync to
-            finalize the details.
-          </p>
-          <Button
-            variant="link"
-            className="p-0 h-auto text-primary text-[10px] font-black uppercase tracking-widest group-hover:gap-2 transition-all"
-          >
-            Book Sync <ArrowRight className="w-3 h-3" />
-          </Button>
-        </Card>
-
+      <div className="max-w-md mx-auto text-left">
         <Card className="p-6 border-2 border-dashed bg-muted/20 space-y-3">
           <div className="w-8 h-8 rounded-sm bg-background flex items-center justify-center">
             <FileDown className="w-10 h-10 text-primary" />
           </div>
           <h4 className="font-bold uppercase tracking-tight text-lg text-primary">
-            Download PDF
+            Download Files
           </h4>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Missed the email? Download a copy of this estimate directly to your
-            device.
+            Need editable output? Download both the PDF and a Word (.docx)
+            version of this estimate.
           </p>
           {downloadError && (
             <p className="text-[10px] text-destructive font-medium">
               {downloadError}
             </p>
           )}
-          <Button
-            variant="outline"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="w-full text-[10px] bg-blue-900 text-white hover:bg-blue-800 hover:text-white font-black uppercase tracking-widest rounded-lg h-8 flex items-center justify-center gap-2"
-          >
-            {downloading ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Generating…
-              </>
-            ) : (
-              "Download Now"
-            )}
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleDownload("pdf")}
+              disabled={downloadingPdf || downloadingWord}
+              className="w-full text-[10px] bg-blue-900 text-white hover:bg-blue-800 hover:text-white font-black uppercase tracking-widest rounded-lg h-8 flex items-center justify-center gap-2"
+            >
+              {downloadingPdf ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  PDF...
+                </>
+              ) : (
+                "PDF"
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDownload("docx")}
+              disabled={downloadingPdf || downloadingWord}
+              className="w-full text-[10px] bg-zinc-800 text-white hover:bg-zinc-700 hover:text-white font-black uppercase tracking-widest rounded-lg h-8 flex items-center justify-center gap-2"
+            >
+              {downloadingWord ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  WORD...
+                </>
+              ) : (
+                "WORD"
+              )}
+            </Button>
+          </div>
         </Card>
       </div>
 

@@ -55,6 +55,7 @@ export const QuoteFormSchema = z.object({
   hasEndTime: z.boolean().default(false),
   endTime: z.string().default(""),
   hasMinglingCocktailHour: z.boolean().default(false),
+  cocktailDurationHours: z.coerce.number().min(0.5).max(12).default(1),
   hasDuration: z.boolean().default(false),
   // max(24) added — a real event won't exceed 24hrs; prevents payload inflation
   durationHours: z.coerce.number().min(1).max(24).default(4),

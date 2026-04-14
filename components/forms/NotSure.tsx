@@ -54,7 +54,7 @@ export default function NotSure() {
           <h3 className="text-2xl font-black uppercase tracking-tight">
             Email is sent!
           </h3>
-          <p className="text-muted-foreground max-w-[300px]">
+          <p className="text-muted-foreground max-w-75">
             It is being reviewed by our sales and we'll get in touch soon.
           </p>
         </div>

@@ -1,14 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { renderToBuffer } from "@react-pdf/renderer";
-import { createElement } from "react";
+import { Packer } from "docx";
 import { QuoteFormSchema } from "@/schema/quote";
-import { calculateSOW, type LineItem } from "@/lib/calculateSOW";
-import { QuoteDocument } from "@/components/pdf/QuoteDocument";
+import { calculateSOW } from "@/lib/calculateSOW";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { buildQuoteDocxDocument } from "@/lib/buildQuoteDocx";
 
 export async function POST(req: NextRequest) {
-  // ── Rate limiting ────────────────────────────────────────────────────────
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (!(await checkRateLimit(ip, "pdf"))) {
@@ -38,8 +36,6 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
-
-  // Recalculate server-side — never trust client-supplied items/subtotal
   const sowResult = calculateSOW(data);
   if (sowResult.shouldRedirect) {
     return NextResponse.json(
@@ -47,34 +43,23 @@ export async function POST(req: NextRequest) {
       { status: 422 },
     );
   }
-  const items: LineItem[] = sowResult.items;
-  const subtotal = items.reduce(
-    (sum: number, item: LineItem) => sum + item.total,
-    0,
-  );
 
-  // renderToBuffer expects ReactElement<DocumentProps>.
-  // Cast through unknown to satisfy the type without changing runtime behaviour.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const element = createElement(QuoteDocument, {
-    data,
-    items,
-    subtotal,
-  }) as any;
-  const pdfBuffer = await renderToBuffer(element);
+  const items = sowResult.items;
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
 
+  const doc = buildQuoteDocxDocument(data, items, subtotal);
+  const docxBuffer = await Packer.toBuffer(doc);
   const fileName = `quote-${(data.eventName ?? "estimate")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")}.pdf`;
+    .replace(/[^a-z0-9]+/g, "-")}.docx`;
 
-  // Copy into a standalone Uint8Array — Buffer.buffer may span extra bytes and
-  // corrupt the file when passed directly as ArrayBuffer to Response.
-  const bytes = new Uint8Array(pdfBuffer.length);
-  bytes.set(pdfBuffer);
+  const bytes = new Uint8Array(docxBuffer.length);
+  bytes.set(docxBuffer);
   return new Response(bytes, {
     status: 200,
     headers: {
-      "Content-Type": "application/pdf",
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "Content-Disposition": `attachment; filename="${fileName}"`,
       "Content-Length": String(bytes.length),
     },

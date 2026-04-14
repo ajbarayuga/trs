@@ -29,7 +29,7 @@ export function ProgressBar({
   const highWater = maxVisitedStep ?? currentStep;
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-6 mb-8">
+    <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 py-6 mb-8">
       <div className="max-w-3xl mx-auto px-4 mb-6">
         <div className="relative flex justify-between items-center">
           <div className="absolute top-4 left-0 w-full h-0.5 bg-secondary -z-10" />
@@ -76,7 +76,7 @@ export function ProgressBar({
                   )}
                 >
                   {isCompleted ? (
-                    <Check className="w-5 h-5 stroke-[3]" />
+                    <Check className="w-5 h-5 stroke-3" />
                   ) : (
                     <span className="text-xs font-bold">{step.id}</span>
                   )}

@@ -151,7 +151,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                           onClick={() => setValue("hasUnmannedCameras", false)}
                         >
                           <div
-                            className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${!formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
+                            className={`w-4 h-4 rounded-full border-2 shrink-0 ${!formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
                           />
                           <div>
                             <p className="text-sm font-medium">
@@ -167,7 +167,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                           onClick={() => setValue("hasUnmannedCameras", true)}
                         >
                           <div
-                            className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
+                            className={`w-4 h-4 rounded-full border-2 shrink-0 ${formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
                           />
                           <div>
                             <p className="text-sm font-medium">
@@ -380,7 +380,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                         max={24}
                         step={0.5}
                         {...register("highlightDurationHours")}
-                        className="bg-background max-w-[120px]"
+                        className="bg-background max-w-30"
                       />
                       <span className="text-sm text-muted-foreground">
                         hours
@@ -574,7 +574,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                         <Input
                           type="number"
                           {...register("angleCount")}
-                          className="max-w-[100px] bg-background rounded-sm border-2"
+                          className="max-w-25 bg-background rounded-sm border-2"
                         />
                         <span className="text-sm text-muted-foreground">
                           additional angle(s)
@@ -623,7 +623,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                   type="number"
                   min={0}
                   {...register("socialShortsCount")}
-                  className="bg-background max-w-[150px]"
+                  className="bg-background max-w-37.5"
                 />
               </div>
               <div className="space-y-3">

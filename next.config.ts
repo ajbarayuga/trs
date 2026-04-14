@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** Stops Turbopack from picking a parent folder when another lockfile exists on the machine. */
+const turbopackRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -76,6 +81,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: turbopackRoot,
+  },
+
   // ── Packages that must not be bundled by webpack ───────────────────────────
   // @react-pdf/renderer uses native Node.js internals and dynamic requires
   // that break when webpack tries to bundle them. Marking it external tells

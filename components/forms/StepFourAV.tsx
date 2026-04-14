@@ -417,7 +417,7 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
                     min={0}
                     max={400}
                     {...register("attendance")}
-                    className="max-w-[120px] bg-background rounded-sm border-2"
+                    className="max-w-30 bg-background rounded-sm border-2"
                   />
                   <span className="text-sm text-muted-foreground">
                     attendees

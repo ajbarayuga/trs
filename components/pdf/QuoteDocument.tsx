@@ -1,7 +1,9 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { QUOTE_BODY, QUOTE_DISPLAY } from "@/components/pdf/quotePdfFonts";
 import type { QuoteFormData } from "@/schema/quote";
 import type { LineItem } from "@/lib/calculateSOW";
 import { computeWorkPlan } from "@/lib/calculateWorkPlan";
+import { groupLineItems } from "@/lib/quoteLineItemGroups";
 import { fmt } from "@/lib/utils";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -20,123 +22,219 @@ function formatDate(dateStr: string | undefined): string {
   }
 }
 
-// ─── design tokens ────────────────────────────────────────────────────────────
+// ─── design tokens (Jones Room reference: Arial + Proxima Nova; see quotePdfFonts) ─
 
-const MARGIN = 48;
+const MARGIN = 54;
 const BLUE = "#1155CC";
-const PINK_BG = "#FADADD";
-const PINK_TITLE = "#880000";
+/** Cover — Jones Room proposal reference (sizes / colors / placement) */
+const COVER_MARGIN = 72;
+const COVER_ACCENT = "#6495ED";
+const COVER_LABEL = "#666666";
+const COVER_VERSION_REF = "#999999";
+/** Reference Detailed Financials: 1px black rules, light gray section bands */
+const TABLE_BORDER = "#000000";
+const TABLE_SECTION_BG = "#D3D3D3";
+/** Client Will Provide header bar (reference: light pink band behind title) */
+const CLIENT_PROVIDE_HEADER_BG = "#FADBD8";
+/** Section titles (reference: bold medium blue, no rule/underline) */
+const SECTION_TITLE_BLUE = "#4A90E2";
 
 // ─── styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  page: {
+  pageCover: {
     backgroundColor: "#ffffff",
-    fontFamily: "Helvetica",
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
     fontSize: 10,
-    color: "#111111",
-    paddingTop: 40,
-    paddingBottom: 60,
+    color: "#000000",
+    paddingTop: 36,
+    paddingBottom: 56,
+    paddingHorizontal: COVER_MARGIN,
+    flexDirection: "column",
+    height: "100%",
+  },
+  pageInner: {
+    backgroundColor: "#ffffff",
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    fontSize: 11,
+    color: "#000000",
+    paddingTop: 44,
+    paddingBottom: 56,
     paddingHorizontal: MARGIN,
   },
 
-  // ── Cover page ──────────────────────────────────────────────────────────────
-  coverVersionLine: {
+  // ── Cover page (Jones Room ref: centered hero, left body, producer lower) ───
+  coverVersionTopLeft: {
     position: "absolute",
-    top: 20,
-    left: MARGIN,
-    fontSize: 8,
-    color: "#999999",
-    fontFamily: "Helvetica-Oblique",
+    top: 32,
+    left: COVER_MARGIN,
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_VERSION_REF,
   },
-  coverRefLine: {
-    position: "absolute",
-    bottom: 32,
-    right: MARGIN,
-    fontSize: 8,
-    color: "#999999",
-    fontFamily: "Helvetica-Oblique",
+  coverHeroWrap: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: 28,
+    marginBottom: 48,
   },
-  // Date line — bold, centered, above event name
-  coverDate: {
-    fontSize: 16,
-    fontFamily: "Helvetica-Bold",
-    color: "#333333",
+  coverHeroDate: {
+    width: "100%",
     textAlign: "center",
-    marginTop: 52,
-    marginBottom: 8,
-  },
-  // Event name — very large bold centered
-  coverEventName: {
-    fontSize: 30,
-    fontFamily: "Helvetica-Bold",
-    color: "#000000",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  // Services line — large, normal weight
-  coverServicesLine: {
-    fontSize: 22,
-    color: "#333333",
-    textAlign: "center",
-    marginBottom: 44,
-  },
-  coverPartyBlock: {
-    marginBottom: 24,
-  },
-  // "For" / "At" labels — small, gray, lowercase, normal weight
-  coverPartyLabel: {
-    fontSize: 9,
-    color: "#999999",
-    marginBottom: 4,
-  },
-  // Large org/client name — black, very large
-  coverPartyOrgName: {
-    fontSize: 30,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 17,
+    fontFamily: QUOTE_DISPLAY,
+    fontWeight: 700,
     color: "#000000",
     marginBottom: 6,
+  },
+  coverHeroTitle: {
+    width: "100%",
+    textAlign: "center",
+    fontSize: 30,
+    fontFamily: QUOTE_DISPLAY,
+    fontWeight: 700,
+    color: "#000000",
+    lineHeight: 1.12,
+    marginBottom: 0,
+  },
+  coverHeroSubtitle: {
+    width: "100%",
+    textAlign: "center",
+    fontSize: 23,
+    fontFamily: QUOTE_DISPLAY,
+    fontWeight: 400,
+    color: "#000000",
+    marginTop: 44,
     lineHeight: 1.2,
   },
-  // Contact name in blue
-  coverPartyContact: {
-    fontSize: 11,
-    color: BLUE,
+  coverLeftBlock: {
+    width: "100%",
+    marginBottom: 34,
+  },
+  coverSectionLabel: {
+    fontSize: 10.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_LABEL,
+    marginBottom: 5,
+    textAlign: "left",
+  },
+  coverEntityLine: {
+    fontSize: 21,
+    fontFamily: QUOTE_DISPLAY,
+    fontWeight: 700,
+    color: "#000000",
+    lineHeight: 1.18,
+    marginBottom: 1,
+    textAlign: "left",
+  },
+  coverContactLine: {
+    fontSize: 15,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_ACCENT,
+    marginTop: 10,
+    marginBottom: 5,
+    textAlign: "left",
+  },
+  coverPhoneSmall: {
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_LABEL,
     marginBottom: 3,
+    textAlign: "left",
   },
-  // Small info lines (phone, email)
-  coverPartyInfo: {
-    fontSize: 9,
-    color: "#444444",
-    lineHeight: 1.5,
+  coverEmailSmall: {
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_ACCENT,
+    textDecoration: "underline",
+    textAlign: "left",
   },
-  coverPartyInfoBlue: {
-    fontSize: 9,
-    color: BLUE,
-    lineHeight: 1.5,
-  },
-  // Venue name in blue, large
-  coverVenueName: {
-    fontSize: 18,
-    color: BLUE,
-    marginBottom: 4,
+  coverVenueTitle: {
+    fontSize: 15,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_ACCENT,
+    marginBottom: 5,
     lineHeight: 1.3,
+    textAlign: "left",
+  },
+  coverVenueDetail: {
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_LABEL,
+    lineHeight: 1.45,
+    marginBottom: 2,
+    textAlign: "left",
+  },
+  coverProducerCompany: {
+    fontSize: 21,
+    fontFamily: QUOTE_DISPLAY,
+    fontWeight: 700,
+    color: "#000000",
+    marginBottom: 6,
+    lineHeight: 1.15,
+    textAlign: "left",
+  },
+  coverProducerName: {
+    fontSize: 15,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_ACCENT,
+    marginBottom: 5,
+    textAlign: "left",
+  },
+  coverProducerBlock: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  coverSpacer: {
+    flexGrow: 1,
+    minHeight: 48,
+  },
+  coverSpecNote: {
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_LABEL,
+    fontStyle: "italic",
+    textAlign: "left",
+  },
+  coverFooterRef: {
+    position: "absolute",
+    bottom: 32,
+    left: COVER_MARGIN,
+    right: COVER_MARGIN,
+  },
+  coverRefNumber: {
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: COVER_VERSION_REF,
+    textAlign: "right",
   },
 
-  // ── Blue section headings ────────────────────────────────────────────────────
+  // ── Section headings (reference: blue caps, no underline; breathable margins) ─
   sectionHeading: {
     marginTop: 18,
-    marginBottom: 8,
-    paddingBottom: 4,
-    borderBottomWidth: 1.5,
-    borderBottomColor: BLUE,
+    marginBottom: 10,
+    paddingBottom: 0,
+    alignSelf: "flex-start",
   },
   sectionTitle: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: BLUE,
+    fontSize: 12,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: SECTION_TITLE_BLUE,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 0.45,
   },
 
   // ── Service sub-headings (under Technical Scope) ─────────────────────────────
@@ -144,59 +242,81 @@ const s = StyleSheet.create({
     marginTop: 10,
     marginBottom: 4,
     paddingLeft: 8,
+    alignSelf: "flex-start",
   },
   serviceSubTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: "#111111",
+    fontSize: 10.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: SECTION_TITLE_BLUE,
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.35,
   },
 
-  // ── Client Will Provide (pink box) ───────────────────────────────────────────
+  // ── Client Will Provide (reference: pink header bar + 11–12pt list) ───────────
+  // Note: do NOT set alignItems:flex-start on the outer box — it shrinks every
+  // child to intrinsic width and squeezes the list into a narrow column.
   clientProvideBox: {
-    backgroundColor: PINK_BG,
-    padding: 12,
-    marginBottom: 6,
+    marginBottom: 12,
+  },
+  clientProvideTitleBar: {
+    alignSelf: "flex-start",
+    backgroundColor: CLIENT_PROVIDE_HEADER_BG,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    marginBottom: 10,
   },
   clientProvideTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: PINK_TITLE,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
+    fontSize: 17,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#1A1A1A",
+    letterSpacing: 0.12,
+    textAlign: "left",
   },
   clientProvideRow: {
     flexDirection: "row",
-    marginBottom: 3,
+    marginBottom: 5,
+    paddingLeft: 4,
   },
   clientProvideNum: {
-    fontSize: 9,
-    color: "#333333",
-    width: 16,
+    fontSize: 11.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
+    width: 18,
   },
   clientProvideText: {
-    fontSize: 9,
-    color: "#333333",
-    lineHeight: 1.5,
+    fontSize: 11.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
+    lineHeight: 1.38,
     flex: 1,
   },
   clientProvideIndentRow: {
     flexDirection: "row",
-    marginBottom: 3,
-    paddingLeft: 16,
+    marginBottom: 5,
+    paddingLeft: 20,
   },
   clientProvideIndentLabel: {
-    fontSize: 9,
-    color: "#333333",
-    width: 14,
+    fontSize: 11.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
+    width: 16,
   },
   clientProvideIndentText: {
-    fontSize: 9,
-    color: "#333333",
-    lineHeight: 1.5,
+    fontSize: 11.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
+    lineHeight: 1.38,
     flex: 1,
+  },
+  clientProvideBold: {
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
   },
 
   // ── Bullet rows ──────────────────────────────────────────────────────────────
@@ -206,21 +326,26 @@ const s = StyleSheet.create({
     paddingLeft: 8,
   },
   bulletSymbol: {
-    fontSize: 10,
-    color: "#444444",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     marginRight: 6,
     width: 10,
   },
   bulletText: {
-    fontSize: 9,
-    color: "#333333",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     flex: 1,
     lineHeight: 1.45,
   },
   bulletTextBold: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: "#111111",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#000000",
     flex: 1,
   },
   subBulletRow: {
@@ -229,23 +354,28 @@ const s = StyleSheet.create({
     paddingLeft: 22,
   },
   subBulletSymbol: {
-    fontSize: 8,
-    color: "#666666",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#555555",
     marginRight: 6,
     width: 10,
   },
   subBulletText: {
-    fontSize: 9,
-    color: "#444444",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     flex: 1,
-    lineHeight: 1.4,
+    lineHeight: 1.45,
   },
 
   // ── Work plan ────────────────────────────────────────────────────────────────
   workPlanDateHeader: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: "#111111",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: SECTION_TITLE_BLUE,
     marginBottom: 5,
     marginTop: 4,
     paddingLeft: 8,
@@ -257,27 +387,34 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
   },
   workPlanDash: {
-    fontSize: 9,
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
     color: "#555555",
     width: 12,
     marginTop: 1,
   },
   workPlanTime: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
     width: 82,
-    color: "#222222",
+    color: "#000000",
   },
   workPlanDesc: {
-    fontSize: 9,
-    color: "#444444",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     flex: 1,
     lineHeight: 1.45,
   },
   workPlanNote: {
-    fontSize: 8,
-    color: "#888888",
-    fontFamily: "Helvetica-Oblique",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    fontStyle: "italic",
+    color: "#555555",
     paddingLeft: 8,
     marginTop: 5,
   },
@@ -290,108 +427,181 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
   },
   locationLabel: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
     width: 110,
-    color: "#555555",
+    color: "#000000",
   },
   locationValue: {
-    fontSize: 9,
-    color: "#333333",
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     flex: 1,
-    lineHeight: 1.4,
+    lineHeight: 1.45,
   },
 
-  // ── Financials table ─────────────────────────────────────────────────────────
+  // ── Financials table (reference: black grid, gray section rows, white body) ─
   financialsTitle: {
-    fontSize: 22,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 25,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
     textAlign: "center",
     marginBottom: 20,
-    color: "#000000",
+    marginTop: 4,
+    color: SECTION_TITLE_BLUE,
+    letterSpacing: 0.2,
   },
   tableWrapper: {
     marginTop: 4,
+    borderWidth: 1,
+    borderColor: TABLE_BORDER,
   },
   tableHeaderRow: {
     flexDirection: "row",
-    backgroundColor: "#1a1a1a",
-    paddingVertical: 7,
-    paddingHorizontal: 8,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: TABLE_BORDER,
+  },
+  tableHeadCol: {
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderRightColor: TABLE_BORDER,
+  },
+  tableHeadColEnd: {
+    borderRightWidth: 0,
+  },
+  tableHeadColNumeric: {
+    alignItems: "center",
   },
   tableHeaderCell: {
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 10.5,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#000000",
+    textAlign: "center",
   },
   tableSectionRow: {
     flexDirection: "row",
-    backgroundColor: "#e8e8e8",
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    backgroundColor: TABLE_SECTION_BG,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     justifyContent: "center",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: TABLE_BORDER,
   },
   tableSectionLabel: {
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
-    color: "#444444",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#000000",
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.35,
+    textAlign: "center",
+  },
+  tableSubSectionRow: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: TABLE_BORDER,
+  },
+  tableSubSectionLabel: {
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#000000",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     textAlign: "center",
   },
   tableDataRow: {
     flexDirection: "row",
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#eeeeee",
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: TABLE_BORDER,
   },
-  tableDataRowAlt: {
-    backgroundColor: "#f9f9f9",
+  tableBodyCol: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderRightColor: TABLE_BORDER,
   },
-  colName: { width: "28%" },
-  colDesc: { width: "36%" },
-  colUnits: { width: "10%", textAlign: "right" },
-  colPrice: { width: "13%", textAlign: "right" },
-  colSubtotal: { width: "13%", textAlign: "right" },
+  tableBodyColName: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tableBodyColDesc: {
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  tableBodyColNumeric: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  colName: { width: "22%" },
+  colDesc: { width: "42%" },
+  colUnits: { width: "10%" },
+  colPrice: { width: "13%" },
+  colSubtotal: { width: "13%", borderRightWidth: 0 },
   cellName: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: "#111111",
-    lineHeight: 1.4,
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#000000",
+    lineHeight: 1.35,
+    textAlign: "center",
   },
   cellDesc: {
-    fontSize: 8,
-    color: "#555555",
-    lineHeight: 1.4,
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
+    lineHeight: 1.45,
+    textAlign: "left",
   },
   cellNum: {
-    fontSize: 9,
-    color: "#333333",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
+    textAlign: "center",
+    width: "100%",
   },
   cellNumBold: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    color: "#111111",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: "#000000",
+    textAlign: "center",
+    width: "100%",
   },
 
-  // ── Total (plain bold text below table) ─────────────────────────────────────
+  // ── Total (reference: left-aligned below grid, large bold) ─────────────────
   totalRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingTop: 10,
+    paddingHorizontal: 4,
+    paddingTop: 16,
     paddingBottom: 6,
-    borderTopWidth: 2,
-    borderTopColor: "#1a1a1a",
-    marginTop: 2,
+    backgroundColor: "#FFFFFF",
   },
   totalText: {
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 19,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
     color: "#000000",
   },
 
@@ -404,36 +614,54 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   noteTitle: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
     marginBottom: 4,
-    color: "#333333",
+    color: SECTION_TITLE_BLUE,
   },
   noteText: {
-    fontSize: 9,
-    color: "#555555",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#333333",
     lineHeight: 1.5,
   },
 
-  // ── Terms ────────────────────────────────────────────────────────────────────
+  // ── Terms page header (reference: centered, both lines black, no underline) ─
+  termsPageHeader: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 20,
+  },
   termsPageTitle: {
-    fontSize: 15,
-    fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
+    width: "100%",
+    textAlign: "center",
+    fontSize: 18,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    marginBottom: 6,
+    marginTop: 2,
     color: "#000000",
+    letterSpacing: 0.15,
   },
   termsUpdated: {
-    fontSize: 8,
-    color: "#888888",
+    width: "100%",
+    textAlign: "center",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     marginBottom: 18,
   },
   termsSection: {
     marginBottom: 10,
   },
   termsSectionTitle: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: BLUE,
+    fontSize: 11,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
+    color: SECTION_TITLE_BLUE,
     marginBottom: 5,
   },
   termsSubARow: {
@@ -442,14 +670,17 @@ const s = StyleSheet.create({
     paddingLeft: 12,
   },
   termsSubALabel: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 700,
     width: 18,
-    color: "#333333",
+    color: "#000000",
   },
   termsSubAText: {
-    fontSize: 9,
-    color: "#444444",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     flex: 1,
     lineHeight: 1.55,
   },
@@ -459,32 +690,55 @@ const s = StyleSheet.create({
     paddingLeft: 28,
   },
   termsNumLabel: {
-    fontSize: 8.5,
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
     width: 16,
-    color: "#555555",
+    color: "#000000",
   },
   termsNumText: {
-    fontSize: 8.5,
-    color: "#555555",
+    fontSize: 10,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
     flex: 1,
     lineHeight: 1.5,
   },
 
-  // ── Page footer ──────────────────────────────────────────────────────────────
+  // ── Page footer (fixed: repeats on wrapped pages within each <Page>) ───────
   pageFooter: {
     position: "absolute",
-    bottom: 20,
+    bottom: 18,
     left: MARGIN,
     right: MARGIN,
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 0.5,
-    borderTopColor: "#dddddd",
-    paddingTop: 5,
+    borderTopColor: "#CFCFCF",
+    paddingTop: 6,
+  },
+  pageFooterColLeft: {
+    width: "32%",
+  },
+  pageFooterColCenter: {
+    width: "36%",
+    textAlign: "center",
+  },
+  pageFooterColRight: {
+    width: "32%",
+    textAlign: "right",
   },
   pageFooterText: {
-    fontSize: 7.5,
-    color: "#aaaaaa",
+    fontSize: 9,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#555555",
+  },
+  pageFooterPageNum: {
+    fontSize: 9,
+    fontFamily: QUOTE_BODY,
+    fontWeight: 400,
+    color: "#000000",
   },
 });
 
@@ -510,7 +764,7 @@ function SubBulletRow({ text }: { text: string }) {
 
 function SectionHeading({ title }: { title: string }) {
   return (
-    <View style={s.sectionHeading}>
+    <View style={s.sectionHeading} minPresenceAhead={64}>
       <Text style={s.sectionTitle}>{title}</Text>
     </View>
   );
@@ -527,8 +781,50 @@ function ServiceSubHeading({ title }: { title: string }) {
 function PageFooter({ refNum, version }: { refNum: string; version: string }) {
   return (
     <View style={s.pageFooter} fixed>
-      <Text style={s.pageFooterText}>{refNum}</Text>
-      <Text style={s.pageFooterText}>{version}</Text>
+      <View style={s.pageFooterColLeft}>
+        <Text style={s.pageFooterText}>{refNum}</Text>
+      </View>
+      <View style={s.pageFooterColCenter}>
+        <Text
+          style={s.pageFooterPageNum}
+          render={({ pageNumber, totalPages }) =>
+            `Page ${pageNumber} of ${totalPages}`
+          }
+        />
+      </View>
+      <View style={s.pageFooterColRight}>
+        <Text style={s.pageFooterText}>{version}</Text>
+      </View>
+    </View>
+  );
+}
+
+function FinancialDataRow({ item }: { item: LineItem }) {
+  return (
+    <View style={s.tableDataRow} wrap={false}>
+      <View style={[s.tableBodyCol, s.colName, s.tableBodyColName]}>
+        <Text style={s.cellName}>{item.name}</Text>
+      </View>
+      <View style={[s.tableBodyCol, s.colDesc, s.tableBodyColDesc]}>
+        <Text style={s.cellDesc}>{item.description}</Text>
+      </View>
+      <View
+        style={[s.tableBodyCol, s.colUnits, s.tableBodyColNumeric]}
+      >
+        <Text style={s.cellNum}>
+          {item.quantity} {item.unit}
+        </Text>
+      </View>
+      <View
+        style={[s.tableBodyCol, s.colPrice, s.tableBodyColNumeric]}
+      >
+        <Text style={s.cellNum}>{fmt(item.rate)}</Text>
+      </View>
+      <View
+        style={[s.tableBodyCol, s.colSubtotal, s.tableBodyColNumeric]}
+      >
+        <Text style={s.cellNumBold}>{fmt(item.total)}</Text>
+      </View>
     </View>
   );
 }
@@ -584,42 +880,15 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
 
   const workPlan = computeWorkPlan(data);
 
-  // ── group line items by category ─────────────────────────────────────────────
-  const laborItems = items.filter(
-    (i) =>
-      i.unit === "hrs" ||
-      i.unit === "flat" ||
-      i.description.toLowerCase().includes("tech") ||
-      i.name.toLowerCase().includes("tech") ||
-      i.name.toLowerCase().includes("lead") ||
-      i.name.toLowerCase().includes("operator"),
-  );
-  const equipItems = items.filter(
-    (i) =>
-      !laborItems.includes(i) &&
-      (i.unit === "set" ||
-        i.unit === "day" ||
-        i.unit === "kit" ||
-        i.unit === "pack" ||
-        i.unit === "unit" ||
-        i.unit === "service"),
-  );
-  const postItems = items.filter(
-    (i) =>
-      !laborItems.includes(i) &&
-      !equipItems.includes(i) &&
-      (i.unit === "edit" ||
-        i.unit === "talk" ||
-        i.unit === "short" ||
-        i.unit === "slot" ||
-        i.description.toLowerCase().includes("edit")),
-  );
-  const otherItems = items.filter(
-    (i) =>
-      !laborItems.includes(i) &&
-      !equipItems.includes(i) &&
-      !postItems.includes(i),
-  );
+  const {
+    laborItems,
+    equipItems,
+    postItems,
+    discountItems,
+    miscOtherItems,
+    recordingEquipItems,
+    nonRecordingEquipItems,
+  } = groupLineItems(items);
 
   // ── built-in AV items (excluding "not-sure") ─────────────────────────────────
   const builtInAVList = (data.builtInAV ?? []).filter((x) => x !== "not-sure");
@@ -640,75 +909,83 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
       {/* ════════════════════════════════════════════════════════════════
           PAGE 1 — COVER
       ════════════════════════════════════════════════════════════════ */}
-      <Page size="A4" style={s.page}>
-        {/* Version top-left */}
-        <Text style={s.coverVersionLine}>{versionLabel}</Text>
+      <Page size="A4" style={s.pageCover}>
+        <Text style={s.coverVersionTopLeft}>{versionLabel}</Text>
 
-        {/* Date — prominent, above event name */}
-        <Text style={s.coverDate}>{fullDate}</Text>
+        {/* Centered header — date, program title, services subtitle */}
+        <View style={s.coverHeroWrap}>
+          <Text style={s.coverHeroDate}>
+            {data.hasDate && data.eventDate
+              ? formatDate(data.eventDate)
+              : fullDate}
+          </Text>
+          <Text style={s.coverHeroTitle}>{eventName}</Text>
+          <Text style={s.coverHeroSubtitle}>{servicesLine}</Text>
+        </View>
 
-        {/* Event name */}
-        <Text style={s.coverEventName}>{eventName}</Text>
-
-        {/* Services summary */}
-        <Text style={s.coverServicesLine}>{servicesLine}</Text>
-
-        {/* For */}
-        <View style={s.coverPartyBlock}>
-          <Text style={s.coverPartyLabel}>For</Text>
+        {/* For — left */}
+        <View style={s.coverLeftBlock}>
+          <Text style={s.coverSectionLabel}>For</Text>
           {!data.isSpecQuote ? (
             <>
-              {/* Org name is the large primary entity; clientName is the contact */}
-              {org ? (
-                <>
-                  <Text style={s.coverPartyOrgName}>{org}</Text>
-                  <Text style={s.coverPartyContact}>Contact: {clientName}</Text>
-                </>
-              ) : (
-                <Text style={s.coverPartyOrgName}>{clientName}</Text>
-              )}
+              {org ? <Text style={s.coverEntityLine}>{org}</Text> : null}
+              {!org && clientName && clientName !== "TBD" ? (
+                <Text style={s.coverEntityLine}>{clientName}</Text>
+              ) : null}
+              {org && clientName && clientName !== "TBD" ? (
+                <Text style={s.coverContactLine}>Contact: {clientName}</Text>
+              ) : null}
+              {!org && (!clientName || clientName === "TBD") ? (
+                <Text style={s.coverContactLine}>Contact: TBD</Text>
+              ) : null}
               {clientPhone ? (
-                <Text style={s.coverPartyInfo}>{clientPhone}</Text>
+                <Text style={s.coverPhoneSmall}>{clientPhone}</Text>
               ) : null}
               {data.deliveryEmail ? (
-                <Text style={s.coverPartyInfoBlue}>{data.deliveryEmail}</Text>
+                <Text style={s.coverEmailSmall}>{data.deliveryEmail}</Text>
               ) : null}
             </>
           ) : (
-            <Text style={s.coverPartyInfo}>(Spec Quote)</Text>
+            <Text style={s.coverSpecNote}>(Spec Quote)</Text>
           )}
         </View>
 
-        {/* At */}
-        <View style={s.coverPartyBlock}>
-          <Text style={s.coverPartyLabel}>At</Text>
-          <Text style={s.coverVenueName}>{venueName}</Text>
-          <Text style={s.coverPartyInfo}>{setting}</Text>
-          <Text style={s.coverPartyInfo}>Event Date: {eventDate}</Text>
-          <Text style={s.coverPartyInfo}>Duration: {duration}</Text>
+        {/* At — left */}
+        <View style={s.coverLeftBlock}>
+          <Text style={s.coverSectionLabel}>At</Text>
+          <Text style={s.coverVenueTitle}>{venueName}</Text>
+          <Text style={s.coverVenueDetail}>{setting}</Text>
+          <Text style={s.coverVenueDetail}>Event date: {eventDate}</Text>
+          <Text style={s.coverVenueDetail}>Duration: {duration}</Text>
         </View>
 
-        {/* To Be Produced By */}
-        <View style={s.coverPartyBlock}>
-          <Text style={s.coverPartyLabel}>To Be Produced By</Text>
-          <Text style={s.coverVenueName}>The Recording Service LLC</Text>
-          <Text style={s.coverPartyInfo}>contact@therecordingservice.com</Text>
-          <Text style={s.coverPartyInfo}>770-696-3139</Text>
+        <View style={s.coverSpacer} />
+
+        {/* To Be Produced By — lower page (reference placement) */}
+        <View style={s.coverProducerBlock}>
+          <Text style={s.coverSectionLabel}>To Be Produced By</Text>
+          <Text style={s.coverProducerCompany}>The Recording Service LLC</Text>
+          <Text style={s.coverProducerName}>Harry Barnes</Text>
+          <Text style={s.coverPhoneSmall}>770-696-3139</Text>
+          <Text style={s.coverEmailSmall}>harry@therecordingservice.com</Text>
         </View>
 
-        {/* Ref bottom-right */}
-        <Text style={s.coverRefLine}>{refNum}</Text>
+        <View style={s.coverFooterRef}>
+          <Text style={s.coverRefNumber}>{refNum}</Text>
+        </View>
       </Page>
 
       {/* ════════════════════════════════════════════════════════════════
           PAGE 2+ — SCOPE / WORK PLAN / LOCATION
       ════════════════════════════════════════════════════════════════ */}
-      <Page size="A4" style={s.page}>
+      <Page size="A4" style={s.pageInner}>
         {/* ── Client Will Provide (pink box) ─────────────────────────── */}
         <View style={s.clientProvideBox}>
-          <Text style={s.clientProvideTitle}>
-            *** Client Will Provide The Following ***
-          </Text>
+          <View style={s.clientProvideTitleBar}>
+            <Text style={s.clientProvideTitle}>
+              *** Client Will Provide The Following ***
+            </Text>
+          </View>
           <View style={s.clientProvideRow}>
             <Text style={s.clientProvideNum}>1.</Text>
             <Text style={s.clientProvideText}>
@@ -722,7 +999,9 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           <View style={s.clientProvideIndentRow}>
             <Text style={s.clientProvideIndentLabel}>{nextSubLabel()}</Text>
             <Text style={s.clientProvideIndentText}>
-              Run of Show document detailing the program
+              <Text style={s.clientProvideBold}>Run of Show document</Text>
+              {" "}
+              detailing the program
             </Text>
           </View>
           {builtInAVList.length > 0 && (
@@ -890,7 +1169,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
         {/* ── Work Plan ──────────────────────────────────────────────── */}
         {workPlan.rows.length > 0 && (
           <>
-            <SectionHeading title="Work Plan" />
+            <SectionHeading title="Work Plan (day-by-day)" />
             {workPlan.dateHeader ? (
               <Text style={s.workPlanDateHeader}>{workPlan.dateHeader}</Text>
             ) : null}
@@ -905,6 +1184,12 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
               <Text style={s.workPlanNote}>
                 * Times are approximate — based on an assumed 12:00 PM show
                 start. Your Production Lead will confirm the final schedule.
+              </Text>
+            )}
+            {workPlan.cocktailTimeUnknown && (
+              <Text style={s.workPlanNote}>
+                * Reception end time not shown — provide a program end time or
+                duration for a complete work plan.
               </Text>
             )}
           </>
@@ -960,17 +1245,38 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
       {/* ════════════════════════════════════════════════════════════════
           FINANCIALS PAGE
       ════════════════════════════════════════════════════════════════ */}
-      <Page size="A4" style={s.page}>
+      <Page size="A4" style={s.pageInner}>
         <Text style={s.financialsTitle}>Detailed Financials</Text>
 
         <View style={s.tableWrapper}>
-          {/* Table header row */}
+          {/* Table header row — all columns centered (reference) */}
           <View style={s.tableHeaderRow}>
-            <Text style={[s.tableHeaderCell, s.colName]}>Item Name</Text>
-            <Text style={[s.tableHeaderCell, s.colDesc]}>Item Description</Text>
-            <Text style={[s.tableHeaderCell, s.colUnits]}>Units</Text>
-            <Text style={[s.tableHeaderCell, s.colPrice]}>Price / Unit</Text>
-            <Text style={[s.tableHeaderCell, s.colSubtotal]}>Subtotal</Text>
+            <View style={[s.tableHeadCol, s.colName]}>
+              <Text style={s.tableHeaderCell}>Item Name</Text>
+            </View>
+            <View style={[s.tableHeadCol, s.colDesc]}>
+              <Text style={s.tableHeaderCell}>Item Description</Text>
+            </View>
+            <View
+              style={[s.tableHeadCol, s.colUnits, s.tableHeadColNumeric]}
+            >
+              <Text style={s.tableHeaderCell}>Units</Text>
+            </View>
+            <View
+              style={[s.tableHeadCol, s.colPrice, s.tableHeadColNumeric]}
+            >
+              <Text style={s.tableHeaderCell}>Price / Unit</Text>
+            </View>
+            <View
+              style={[
+                s.tableHeadCol,
+                s.colSubtotal,
+                s.tableHeadColNumeric,
+                s.tableHeadColEnd,
+              ]}
+            >
+              <Text style={s.tableHeaderCell}>Subtotal</Text>
+            </View>
           </View>
 
           {/* Labor */}
@@ -980,62 +1286,50 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <Text style={s.tableSectionLabel}>Labor</Text>
               </View>
               {laborItems.map((item, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    s.tableDataRow,
-                    idx % 2 !== 0 ? s.tableDataRowAlt : {},
-                  ]}
-                  wrap={false}
-                >
-                  <View style={s.colName}>
-                    <Text style={s.cellName}>{item.name}</Text>
-                  </View>
-                  <View style={s.colDesc}>
-                    <Text style={s.cellDesc}>{item.description}</Text>
-                  </View>
-                  <Text style={[s.cellNum, s.colUnits]}>
-                    {item.quantity} {item.unit}
-                  </Text>
-                  <Text style={[s.cellNum, s.colPrice]}>{fmt(item.rate)}</Text>
-                  <Text style={[s.cellNumBold, s.colSubtotal]}>
-                    {fmt(item.total)}
-                  </Text>
-                </View>
+                <FinancialDataRow
+                  key={`labor-${item.name}-${idx}`}
+                  item={item}
+                />
               ))}
             </>
           )}
 
-          {/* Equipment */}
+          {/* Equipment (+ optional RECORDING / AUDIO · PA sub-bands) */}
           {equipItems.length > 0 && (
             <>
               <View style={s.tableSectionRow}>
                 <Text style={s.tableSectionLabel}>Equipment</Text>
               </View>
-              {equipItems.map((item, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    s.tableDataRow,
-                    idx % 2 !== 0 ? s.tableDataRowAlt : {},
-                  ]}
-                  wrap={false}
-                >
-                  <View style={s.colName}>
-                    <Text style={s.cellName}>{item.name}</Text>
+              {recordingEquipItems.length > 0 && (
+                <>
+                  <View style={s.tableSubSectionRow}>
+                    <Text style={s.tableSubSectionLabel}>RECORDING</Text>
                   </View>
-                  <View style={s.colDesc}>
-                    <Text style={s.cellDesc}>{item.description}</Text>
-                  </View>
-                  <Text style={[s.cellNum, s.colUnits]}>
-                    {item.quantity} {item.unit}
-                  </Text>
-                  <Text style={[s.cellNum, s.colPrice]}>{fmt(item.rate)}</Text>
-                  <Text style={[s.cellNumBold, s.colSubtotal]}>
-                    {fmt(item.total)}
-                  </Text>
-                </View>
-              ))}
+                  {recordingEquipItems.map((item, idx) => (
+                    <FinancialDataRow
+                      key={`eq-rec-${item.name}-${idx}`}
+                      item={item}
+                    />
+                  ))}
+                </>
+              )}
+              {nonRecordingEquipItems.length > 0 && (
+                <>
+                  {recordingEquipItems.length > 0 && (
+                    <View style={s.tableSubSectionRow}>
+                      <Text style={s.tableSubSectionLabel}>
+                        AUDIO / PA
+                      </Text>
+                    </View>
+                  )}
+                  {nonRecordingEquipItems.map((item, idx) => (
+                    <FinancialDataRow
+                      key={`eq-pa-${item.name}-${idx}`}
+                      item={item}
+                    />
+                  ))}
+                </>
+              )}
             </>
           )}
 
@@ -1046,69 +1340,48 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <Text style={s.tableSectionLabel}>Post-Production</Text>
               </View>
               {postItems.map((item, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    s.tableDataRow,
-                    idx % 2 !== 0 ? s.tableDataRowAlt : {},
-                  ]}
-                  wrap={false}
-                >
-                  <View style={s.colName}>
-                    <Text style={s.cellName}>{item.name}</Text>
-                  </View>
-                  <View style={s.colDesc}>
-                    <Text style={s.cellDesc}>{item.description}</Text>
-                  </View>
-                  <Text style={[s.cellNum, s.colUnits]}>
-                    {item.quantity} {item.unit}
-                  </Text>
-                  <Text style={[s.cellNum, s.colPrice]}>{fmt(item.rate)}</Text>
-                  <Text style={[s.cellNumBold, s.colSubtotal]}>
-                    {fmt(item.total)}
-                  </Text>
-                </View>
+                <FinancialDataRow
+                  key={`post-${item.name}-${idx}`}
+                  item={item}
+                />
               ))}
             </>
           )}
 
-          {/* Other */}
-          {otherItems.length > 0 && (
+          {/* Discounts */}
+          {discountItems.length > 0 && (
+            <>
+              <View style={s.tableSectionRow}>
+                <Text style={s.tableSectionLabel}>Discounts</Text>
+              </View>
+              {discountItems.map((item, idx) => (
+                <FinancialDataRow
+                  key={`disc-${item.name}-${idx}`}
+                  item={item}
+                />
+              ))}
+            </>
+          )}
+
+          {/* Other (e.g. rush fee) */}
+          {miscOtherItems.length > 0 && (
             <>
               <View style={s.tableSectionRow}>
                 <Text style={s.tableSectionLabel}>Other</Text>
               </View>
-              {otherItems.map((item, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    s.tableDataRow,
-                    idx % 2 !== 0 ? s.tableDataRowAlt : {},
-                  ]}
-                  wrap={false}
-                >
-                  <View style={s.colName}>
-                    <Text style={s.cellName}>{item.name}</Text>
-                  </View>
-                  <View style={s.colDesc}>
-                    <Text style={s.cellDesc}>{item.description}</Text>
-                  </View>
-                  <Text style={[s.cellNum, s.colUnits]}>
-                    {item.quantity} {item.unit}
-                  </Text>
-                  <Text style={[s.cellNum, s.colPrice]}>{fmt(item.rate)}</Text>
-                  <Text style={[s.cellNumBold, s.colSubtotal]}>
-                    {fmt(item.total)}
-                  </Text>
-                </View>
+              {miscOtherItems.map((item, idx) => (
+                <FinancialDataRow
+                  key={`other-${item.name}-${idx}`}
+                  item={item}
+                />
               ))}
             </>
           )}
+        </View>
 
-          {/* Total — plain bold text below table (not a dark row) */}
-          <View style={s.totalRow}>
-            <Text style={s.totalText}>Total: {fmt(subtotal)}</Text>
-          </View>
+        {/* Total — left-aligned below bordered grid (reference) */}
+        <View style={s.totalRow}>
+          <Text style={s.totalText}>Total: {fmt(subtotal)}</Text>
         </View>
 
         {/* Estimate note */}
@@ -1129,9 +1402,11 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
       {/* ════════════════════════════════════════════════════════════════
           TERMS & CONDITIONS PAGE
       ════════════════════════════════════════════════════════════════ */}
-      <Page size="A4" style={s.page}>
-        <Text style={s.termsPageTitle}>Terms and Conditions</Text>
-        <Text style={s.termsUpdated}>Last updated: April 1, 2024</Text>
+      <Page size="A4" style={s.pageInner}>
+        <View style={s.termsPageHeader}>
+          <Text style={s.termsPageTitle}>Terms and Conditions</Text>
+          <Text style={s.termsUpdated}>Last updated: April 1, 2024</Text>
+        </View>
 
         {/* I. Rush Fee */}
         <View style={s.termsSection} wrap={false}>

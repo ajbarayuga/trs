@@ -378,6 +378,18 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                         No
                       </button>
                     </div>
+                    {formData.hasMinglingCocktailHour && (
+                      <div className="flex items-center gap-3 mt-2">
+                        <Input
+                          type="number"
+                          {...register("cocktailDurationHours")}
+                          className="max-w-25 bg-background rounded-sm border-2"
+                        />
+                        <span className="text-sm text-muted-foreground font-medium">
+                          hours
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -426,7 +438,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                     <Input
                       type="number"
                       {...register("durationHours")}
-                      className="max-w-[100px] bg-background rounded-sm border-2"
+                      className="max-w-25 bg-background rounded-sm border-2"
                     />
                     <span className="text-sm text-muted-foreground font-medium">
                       hours
@@ -537,7 +549,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                     type="number"
                     step="0.5"
                     {...register("studioDurationHours")}
-                    className="max-w-[100px] bg-background rounded-sm border-2"
+                    className="max-w-25 bg-background rounded-sm border-2"
                   />
                   <span className="text-sm text-muted-foreground font-medium">
                     hours
@@ -885,7 +897,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
             <Textarea
               {...register("feedback")}
               placeholder="Your feedback helps us grow..."
-              className="min-h-[115px] rounded-sm bg-muted/20 border-2 border-transparent focus:border-primary/20 transition-all text-sm italic"
+              className="min-h-28.75 rounded-sm bg-muted/20 border-2 border-transparent focus:border-primary/20 transition-all text-sm italic"
             />
           </div>
         </div>

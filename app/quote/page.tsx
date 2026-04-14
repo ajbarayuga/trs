@@ -406,7 +406,7 @@ export default function QuotePage() {
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" /> Back to home
                 </Button>
-                <Card className="rounded-[2rem] overflow-hidden border-border/50 shadow-2xl">
+                <Card className="rounded-4xl overflow-hidden border-border/50 shadow-2xl">
                   <CardHeader className="bg-muted/20 p-8 border-b">
                     <CardTitle className="text-3xl font-bold">
                       Contact Sales

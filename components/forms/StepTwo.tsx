@@ -66,7 +66,7 @@ export function StepTwo({
             <div
               key={cat.id}
               className={cn(
-                "cursor-pointer border-2 transition-all duration-300 rounded-sm min-h-[140px] flex flex-col items-center justify-center text-center p-6",
+                "cursor-pointer border-2 transition-all duration-300 rounded-sm min-h-35 flex flex-col items-center justify-center text-center p-6",
                 formData.eventType === cat.id
                   ? "border-primary bg-primary/5 shadow-sm"
                   : "border-border hover:border-primary/20 bg-card",

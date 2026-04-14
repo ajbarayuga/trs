@@ -25,17 +25,20 @@ export interface WorkPlanRow {
 }
 
 export interface WorkPlanResult {
-  dateHeader: string; // e.g. "August 21st:" — empty string if no date
+  dateHeader: string;        // e.g. "August 21st:" — empty string if no date
   rows: WorkPlanRow[];
-  usedDefaultTime: boolean; // true if 12pm was assumed (no times provided)
-  isStudio: boolean; // true if studio session (different structure)
+  usedDefaultTime: boolean;  // true if 12pm was assumed (no times provided)
+  isStudio: boolean;         // true if studio session (different structure)
+  cocktailTimeUnknown: boolean; // true when cocktail hour selected but end time unknown
 }
 
 // ─── Time helpers ─────────────────────────────────────────────────────────────
 
-/** Convert "HH:MM" to total minutes since midnight */
+/** Convert "HH:MM" to total minutes since midnight. Returns NaN for malformed input. */
 function toMins(t: string): number {
+  if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return NaN;
   const [h, m] = t.split(":").map(Number);
+  if (h > 23 || m > 59) return NaN;
   return h * 60 + m;
 }
 
@@ -48,18 +51,21 @@ function fromMins(mins: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-/** Convert "HH:MM" (24h) → "H:MM AM/PM" */
+/** Convert "HH:MM" (24h) → "H:MM AM/PM". Returns "TBD" for malformed input. */
 export function formatTo12h(t: string): string {
   if (!t || t === "TBD") return "TBD";
   const [h, m] = t.split(":").map(Number);
+  if (isNaN(h) || isNaN(m) || h > 23 || m > 59) return "TBD";
   const period = h >= 12 ? "PM" : "AM";
   const hour = h % 12 || 12;
   return `${hour}:${String(m).padStart(2, "0")} ${period}`;
 }
 
-/** Add minutes to a "HH:MM" string, returns "HH:MM" */
+/** Add minutes to a "HH:MM" string, returns "HH:MM". Returns "TBD" for malformed input. */
 function addMins(t: string, delta: number): string {
-  return fromMins(toMins(t) + delta);
+  const base = toMins(t);
+  if (isNaN(base)) return "TBD";
+  return fromMins(base + delta);
 }
 
 /** Format a date string (YYYY-MM-DD) into "Month Dth:" header */
@@ -154,22 +160,25 @@ function getServiceWindows(data: QuoteFormData): TimeWindow[] {
   }
 
   // ── Stage Uplights ──────────────────────────────────────────────────────────
-  // Per kit (1 kit = per 10ft of stage width)
+  // Per kit (1 kit = per 10ft of stage width).
+  // Capped at SW.streaming (180/90 min): beyond 6 kits, parallel crew deployment
+  // is assumed so the arrival window doesn't grow further.
   if (lighting.includes("uplights-stage")) {
     const kits = Math.max(1, Math.ceil((data.stageWashWidth ?? 10) / 10));
     windows.push({
-      setup: SW.stageUplightsPerKit.setup * kits,
-      strike: SW.stageUplightsPerKit.strike * kits,
+      setup: Math.min(SW.stageUplightsPerKit.setup * kits, SW.streaming.setup),
+      strike: Math.min(SW.stageUplightsPerKit.strike * kits, SW.streaming.strike),
     });
   }
 
   // ── Wireless Uplights ───────────────────────────────────────────────────────
-  // Per pack (1 pack = 6 units)
+  // Per pack (1 pack = 6 units).
+  // Same cap as stage uplights — parallel crew assumed beyond 6 packs.
   if (lighting.includes("wireless-uplights")) {
     const packs = Math.max(1, Math.floor((data.wirelessUplightCount ?? 6) / 6));
     windows.push({
-      setup: SW.wirelessUplightsPerPack.setup * packs,
-      strike: SW.wirelessUplightsPerPack.strike * packs,
+      setup: Math.min(SW.wirelessUplightsPerPack.setup * packs, SW.streaming.setup),
+      strike: Math.min(SW.wirelessUplightsPerPack.strike * packs, SW.streaming.strike),
     });
   }
 
@@ -200,39 +209,66 @@ function buildStudioWorkPlan(data: QuoteFormData): WorkPlanResult {
     ? (data.studioDurationHours ?? 4)
     : 4;
 
-  const setupMins = SW.studio.setup;   // 150 min (2.5h)
-  const strikeMins = SW.studio.strike; // 90 min (1.5h)
+  // Extend studio windows if any additional services (PA, lighting, etc.) need more time
+  const serviceWindows = getServiceWindows(data);
+  const maxExtraSetup =
+    serviceWindows.length > 0
+      ? Math.max(...serviceWindows.map((w) => w.setup))
+      : 0;
+  const maxExtraStrike =
+    serviceWindows.length > 0
+      ? Math.max(...serviceWindows.map((w) => w.strike))
+      : 0;
+
+  const setupMins = Math.max(SW.studio.setup, maxExtraSetup);   // min 150 min (2.5h)
+  const strikeMins = Math.max(SW.studio.strike, maxExtraStrike); // min 90 min (1.5h)
+
+  const isPAActive = data.audioServices.includes("pa");
+  const soundcheckTime = addMins(rawSession, -60); // 1h before session if PA active
 
   const arrivalTime = addMins(rawSession, -setupMins);
   const guestArrivalTime = addMins(rawSession, -15); // guests 15min before recording
   const sessionEndTime = addMins(rawSession, studioDuration * 60);
   const departureTime = addMins(sessionEndTime, strikeMins);
 
-  const rows: WorkPlanRow[] = [
-    {
-      time: formatTo12h(arrivalTime),
-      description: "Our crew arrives and begins studio setup.",
-    },
-    {
-      time: formatTo12h(guestArrivalTime),
-      description:
-        "Guests should arrive to be mic'd up and get comfortable before recording begins.",
-    },
-    {
-      time: formatTo12h(rawSession),
-      description: "Recording session begins.",
-    },
-    {
-      time: formatTo12h(sessionEndTime),
-      description: "Recording session concludes.",
-    },
-    {
-      time: formatTo12h(departureTime),
-      description: "Our crew is packed up and leaves.",
-    },
-  ];
+  const rows: WorkPlanRow[] = [];
 
-  return { dateHeader, rows, usedDefaultTime, isStudio: true };
+  rows.push({
+    time: formatTo12h(arrivalTime),
+    description: "Our crew arrives and begins studio setup.",
+  });
+
+  // Soundcheck only if PA active (setupMins >= 150 always satisfies the time check,
+  // but the guard is kept for clarity in case studio windows ever shrink)
+  if (isPAActive) {
+    rows.push({
+      time: formatTo12h(soundcheckTime),
+      description: "Soundcheck begins.",
+    });
+  }
+
+  rows.push({
+    time: formatTo12h(guestArrivalTime),
+    description:
+      "Guests should arrive to be mic'd up and get comfortable before recording begins.",
+  });
+
+  rows.push({
+    time: formatTo12h(rawSession),
+    description: "Recording session begins.",
+  });
+
+  rows.push({
+    time: formatTo12h(sessionEndTime),
+    description: "Recording session concludes.",
+  });
+
+  rows.push({
+    time: formatTo12h(departureTime),
+    description: "Our crew is packed up and leaves.",
+  });
+
+  return { dateHeader, rows, usedDefaultTime, isStudio: true, cocktailTimeUnknown: false };
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -281,7 +317,9 @@ export function computeWorkPlan(data: QuoteFormData): WorkPlanResult {
 
   // Last event time = cocktail hour end (if applicable) or show end
   const cocktailEndTime =
-    rawEnd && data.hasMinglingCocktailHour ? addMins(rawEnd, 60) : null;
+    rawEnd && data.hasMinglingCocktailHour
+      ? addMins(rawEnd, (data.cocktailDurationHours ?? 1) * 60)
+      : null;
   const lastEventTime = cocktailEndTime ?? rawEnd;
   const staffLeavesTime = lastEventTime
     ? addMins(lastEventTime, maxStrike)
@@ -314,11 +352,12 @@ export function computeWorkPlan(data: QuoteFormData): WorkPlanResult {
     });
   }
 
-  // Row 4: Doors open (only if different from show start)
+  // Row 4: Doors open (only if different from show start and actually before it)
   if (
     data.hasShowTimes &&
     data.hasDifferentDoorsTime &&
-    data.doorsTime?.trim()
+    data.doorsTime?.trim() &&
+    toMins(data.doorsTime.trim()) < toMins(rawStart)
   ) {
     rows.push({
       time: formatTo12h(data.doorsTime.trim()),
@@ -355,14 +394,23 @@ export function computeWorkPlan(data: QuoteFormData): WorkPlanResult {
       description: "Our staff is packed up and leaves the venue.",
     });
   } else {
-    // End time unknown — show relative offset
+    // End time unknown — show relative offset in a human-readable form
+    const strikeHours = Math.floor(maxStrike / 60);
+    const strikeMinsRem = maxStrike % 60;
     const strikeLabel =
-      maxStrike >= 60 ? `${maxStrike / 60}h` : `${maxStrike} min`;
+      strikeHours > 0 && strikeMinsRem > 0
+        ? `${strikeHours}h ${strikeMinsRem} min`
+        : strikeHours > 0
+          ? `${strikeHours}h`
+          : `${maxStrike} min`;
     rows.push({
       time: `End + ${strikeLabel}`,
       description: "Our staff is packed up and leaves the venue.",
     });
   }
 
-  return { dateHeader, rows, usedDefaultTime, isStudio: false };
+  const cocktailTimeUnknown =
+    data.hasMinglingCocktailHour && rawEnd === null;
+
+  return { dateHeader, rows, usedDefaultTime, isStudio: false, cocktailTimeUnknown };
 }

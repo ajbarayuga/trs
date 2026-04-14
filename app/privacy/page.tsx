@@ -501,7 +501,7 @@ export default function QuotePage() {
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" /> Back to selection
                 </Button>
-                <Card className="rounded-[2rem] overflow-hidden border-border/50 shadow-2xl">
+                <Card className="rounded-4xl overflow-hidden border-border/50 shadow-2xl">
                   <CardHeader className="bg-muted/20 p-8 border-b">
                     <CardTitle className="text-3xl font-bold">
                       Contact Sales
@@ -712,7 +712,7 @@ export default function QuotePage() {
                 onClick={handleRedirectCancel}
               />
               {/* Modal */}
-              <div className="relative bg-background rounded-[2rem] border border-border/50 shadow-2xl p-8 max-w-md w-full animate-in zoom-in-95 fade-in duration-200">
+              <div className="relative bg-background rounded-4xl border border-border/50 shadow-2xl p-8 max-w-md w-full animate-in zoom-in-95 fade-in duration-200">
                 {/* Icon */}
                 <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mb-6">
                   <AlertCircle className="w-6 h-6 text-amber-600" />
