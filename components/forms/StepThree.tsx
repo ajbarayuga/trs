@@ -19,6 +19,7 @@ import {
   Mic2,
   Film,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // ─── What changed ──────────────────────────────────────────────────────────────
 // "Capabilities" (Live Streaming) and "Solutions" (Video Production) were
@@ -29,11 +30,13 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function StepThree({ onRedirect }: { onRedirect: () => void }) {
-  const { register, setValue, watch, getValues } =
+  const { register, setValue, watch, getValues, formState } =
     useFormContext<QuoteFormData>();
+  const { errors } = formState;
   const formData = watch();
   const services = formData.services ?? [];
   const videoTypes = formData.videoTypes ?? [];
+  const mainServiceMissing = Boolean(errors.services);
 
   const toggleArray = useCallback(
     (field: "services" | "videoTypes", value: string) => {
@@ -55,19 +58,44 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
           <h3 className="text-xl font-black tracking-tight uppercase">
             Services
           </h3>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-            Select all that apply
+          <p
+            className={cn(
+              "text-[10px] uppercase tracking-widest mt-1",
+              mainServiceMissing
+                ? "text-destructive font-bold leading-snug"
+                : "text-muted-foreground",
+            )}
+          >
+            {mainServiceMissing
+              ? "Pick Live Streaming and/or Video here, or Public Address on the next step."
+              : "Select all that apply"}
           </p>
         </div>
 
         {/* ── Live Streaming card ────────────────────────────────────────── */}
         <div className="space-y-4">
           <Card
-            className={`cursor-pointer rounded-sm border-2 transition-all ${services.includes("streaming") ? "border-primary bg-primary/5" : "border-border"}`}
+            className={cn(
+              "cursor-pointer rounded-sm border-2 transition-all",
+              services.includes("streaming")
+                ? "border-primary bg-primary/5"
+                : mainServiceMissing
+                  ? "border-destructive bg-destructive/5 ring-2 ring-destructive/25"
+                  : "border-border",
+            )}
             onClick={() => toggleArray("services", "streaming")}
           >
             <CardContent className="flex items-center gap-4 p-6">
-              <Share2 className="text-primary w-6 h-6" />
+              <Share2
+                className={cn(
+                  "w-6 h-6 shrink-0",
+                  services.includes("streaming")
+                    ? "text-primary"
+                    : mainServiceMissing
+                      ? "text-destructive"
+                      : "text-primary",
+                )}
+              />
               <div className="flex-1">
                 <div className="font-bold text-lg">Live Streaming</div>
                 <p className="text-xs text-muted-foreground">
@@ -240,11 +268,27 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
         {/* ── Video Production card ──────────────────────────────────────── */}
         <div className="space-y-4">
           <Card
-            className={`cursor-pointer rounded-sm border-2 transition-all ${services.includes("video") ? "border-primary bg-primary/5" : "border-border"}`}
+            className={cn(
+              "cursor-pointer rounded-sm border-2 transition-all",
+              services.includes("video")
+                ? "border-primary bg-primary/5"
+                : mainServiceMissing
+                  ? "border-destructive bg-destructive/5 ring-2 ring-destructive/25"
+                  : "border-border",
+            )}
             onClick={() => toggleArray("services", "video")}
           >
             <CardContent className="flex items-center gap-4 p-6">
-              <Video className="text-primary w-6 h-6" />
+              <Video
+                className={cn(
+                  "w-6 h-6 shrink-0",
+                  services.includes("video")
+                    ? "text-primary"
+                    : mainServiceMissing
+                      ? "text-destructive"
+                      : "text-primary",
+                )}
+              />
               <div className="flex-1">
                 <div className="font-bold text-lg">Video Production</div>
                 <p className="text-xs text-muted-foreground">

@@ -37,6 +37,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+/** Required field row: obvious red border + ring when validation fails */
+function shellRowErr(hasError: boolean) {
+  return cn(
+    "flex items-center gap-3 p-3 bg-background border-2 rounded-sm transition-colors",
+    hasError
+      ? "border-destructive ring-2 ring-destructive/35 bg-destructive/5"
+      : "border-border",
+  );
+}
+
 export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
   const { items, subtotal, shouldRedirect } = useQuoteCalculator();
   const {
@@ -670,16 +680,21 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black tracking-widest text-primary">
-                Event Name <span className="text-destructive">*</span>
-              </Label>
-              <div
+              <Label
                 className={cn(
-                  "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
-                  errors.eventName ? "border-destructive" : "border-border",
+                  "text-[10px] uppercase font-black tracking-widest",
+                  errors.eventName ? "text-destructive" : "text-primary",
                 )}
               >
-                <Calendar className="w-4 h-4 text-primary" />
+                Event Name <span className="text-destructive">*</span>
+              </Label>
+              <div className={shellRowErr(!!errors.eventName)}>
+                <Calendar
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    errors.eventName ? "text-destructive" : "text-primary",
+                  )}
+                />
                 <Input
                   {...register("eventName")}
                   placeholder="Name of your event..."
@@ -693,16 +708,21 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
               )}
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] uppercase font-black tracking-widest text-primary">
-                Venue Name & Info <span className="text-destructive">*</span>
-              </Label>
-              <div
+              <Label
                 className={cn(
-                  "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
-                  errors.venueName ? "border-destructive" : "border-border",
+                  "text-[10px] uppercase font-black tracking-widest",
+                  errors.venueName ? "text-destructive" : "text-primary",
                 )}
               >
-                <MapPin className="w-4 h-4 text-muted-foreground" />
+                Venue Name & Info <span className="text-destructive">*</span>
+              </Label>
+              <div className={shellRowErr(!!errors.venueName)}>
+                <MapPin
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    errors.venueName ? "text-destructive" : "text-muted-foreground",
+                  )}
+                />
                 <Input
                   {...register("venueName")}
                   placeholder="Where is it happening?"
@@ -730,18 +750,35 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
               </div>
             ) : (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                <p
+                  className={cn(
+                    "text-[10px] font-bold uppercase tracking-widest",
+                    errors.clientName ||
+                      errors.clientPhone ||
+                      errors.organization
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                  )}
+                >
                   Contact <span className="text-destructive">*</span>
                 </p>
-                <div className="grid grid-cols-1 gap-3">
+                <div
+                  className={cn(
+                    "grid grid-cols-1 gap-3",
+                    (errors.clientName ||
+                      errors.clientPhone ||
+                      errors.organization) &&
+                      "rounded-sm border-2 border-destructive bg-destructive/5 p-3 ring-2 ring-destructive/25",
+                  )}
+                >
                   <div className="space-y-1">
-                    <div
-                      className={cn(
-                        "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
-                        errors.clientName ? "border-destructive" : "border-border",
-                      )}
-                    >
-                      <User className="w-4 h-4 text-primary" />
+                    <div className={shellRowErr(!!errors.clientName)}>
+                      <User
+                        className={cn(
+                          "w-4 h-4 shrink-0",
+                          errors.clientName ? "text-destructive" : "text-primary",
+                        )}
+                      />
                       <Input
                         {...register("clientName")}
                         placeholder="Full Name"
@@ -755,13 +792,13 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <div
-                      className={cn(
-                        "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
-                        errors.clientPhone ? "border-destructive" : "border-border",
-                      )}
-                    >
-                      <Phone className="w-4 h-4 text-primary" />
+                    <div className={shellRowErr(!!errors.clientPhone)}>
+                      <Phone
+                        className={cn(
+                          "w-4 h-4 shrink-0",
+                          errors.clientPhone ? "text-destructive" : "text-primary",
+                        )}
+                      />
                       <Input
                         {...register("clientPhone")}
                         placeholder="Phone Number"
@@ -775,15 +812,15 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <div
-                      className={cn(
-                        "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
-                        errors.organization
-                          ? "border-destructive"
-                          : "border-border",
-                      )}
-                    >
-                      <Building2 className="w-4 h-4 text-primary" />
+                    <div className={shellRowErr(!!errors.organization)}>
+                      <Building2
+                        className={cn(
+                          "w-4 h-4 shrink-0",
+                          errors.organization
+                            ? "text-destructive"
+                            : "text-primary",
+                        )}
+                      />
                       <Input
                         {...register("organization")}
                         placeholder="Organization / Company"
@@ -818,13 +855,21 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
               </Label>
             </div>
             {formData.hasAdditionalPOC && (
-              <div className="space-y-1">
+              <div
+                className={cn(
+                  "space-y-1 rounded-sm p-2 -m-2",
+                  errors.additionalPOC &&
+                    "border-2 border-destructive bg-destructive/5 ring-2 ring-destructive/25",
+                )}
+              >
                 <Input
                   {...register("additionalPOC")}
                   placeholder="Name and Email of additional POC"
                   className={cn(
-                    "rounded-sm animate-in slide-in-from-top-2 border-2",
-                    errors.additionalPOC ? "border-destructive" : "border-border",
+                    "rounded-sm animate-in slide-in-from-top-2 border-2 h-11",
+                    errors.additionalPOC
+                      ? "border-destructive ring-1 ring-destructive/30"
+                      : "border-border",
                   )}
                 />
                 {errors.additionalPOC && (
@@ -940,21 +985,40 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-primary">
+              <Label
+                className={cn(
+                  "text-[10px] font-black uppercase tracking-widest",
+                  errors.deliveryEmail ? "text-destructive" : "text-primary",
+                )}
+              >
                 Enter Your Email <span className="text-destructive">*</span>
               </Label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div
+                className={cn(
+                  "relative rounded-sm transition-colors",
+                  errors.deliveryEmail &&
+                    "ring-2 ring-destructive/35 bg-destructive/5 p-1",
+                )}
+              >
+                <Mail
+                  className={cn(
+                    "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4",
+                    errors.deliveryEmail
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                  )}
+                />
                 <Input
                   {...register("deliveryEmail")}
                   type="email"
                   placeholder="you@example.com"
                   onBlur={() => trigger("deliveryEmail")}
-                  className={`pl-11 h-12 rounded-sm border-2 focus:border-primary transition-colors ${
+                  className={cn(
+                    "pl-11 h-12 rounded-sm border-2 transition-colors",
                     errors.deliveryEmail
-                      ? "border-destructive focus:border-destructive"
-                      : "border-primary/10"
-                  }`}
+                      ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30"
+                      : "border-primary/10 focus:border-primary",
+                  )}
                 />
               </div>
               {errors.deliveryEmail && (

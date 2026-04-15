@@ -27,6 +27,7 @@ import {
   Music,
   Megaphone,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const MIC_TYPES = [
   {
@@ -56,10 +57,12 @@ const MIC_TYPES = [
 ] as const;
 
 export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
-  const { register, setValue, watch, getValues } =
+  const { register, setValue, watch, getValues, formState } =
     useFormContext<QuoteFormData>();
+  const { errors } = formState;
   const formData = watch();
   const audioServices = formData.audioServices ?? [];
+  const mainServiceMissing = Boolean(errors.services);
   const lightingServices = formData.lightingServices ?? [];
   const photographyServices = formData.photographyServices ?? [];
 
@@ -85,8 +88,17 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
           <h3 className="text-xl font-black tracking-tight uppercase">
             Audio-Visual
           </h3>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-            Select all that apply
+          <p
+            className={cn(
+              "text-[10px] uppercase tracking-widest mt-1",
+              mainServiceMissing
+                ? "text-destructive font-bold leading-snug"
+                : "text-muted-foreground",
+            )}
+          >
+            {mainServiceMissing
+              ? "Turn on Public Address below and/or pick Live Streaming or Video on the previous step."
+              : "Select all that apply"}
           </p>
         </div>
 
@@ -94,11 +106,27 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
         <div className="space-y-3">
           {/* Public Address */}
           <Card
-            className={`cursor-pointer rounded-sm border-2 transition-all ${audioServices.includes("pa") ? "border-primary bg-primary/5" : "border-border"}`}
+            className={cn(
+              "cursor-pointer rounded-sm border-2 transition-all",
+              audioServices.includes("pa")
+                ? "border-primary bg-primary/5"
+                : mainServiceMissing
+                  ? "border-destructive bg-destructive/5 ring-2 ring-destructive/25"
+                  : "border-border",
+            )}
             onClick={() => toggleArray("audioServices", "pa")}
           >
             <CardContent className="flex items-center gap-4 p-5">
-              <Volume2 className="text-primary w-5 h-5 shrink-0" />
+              <Volume2
+                className={cn(
+                  "w-5 h-5 shrink-0",
+                  audioServices.includes("pa")
+                    ? "text-primary"
+                    : mainServiceMissing
+                      ? "text-destructive"
+                      : "text-primary",
+                )}
+              />
               <div className="flex-1">
                 <div className="font-bold">Public Address</div>
                 <p className="text-xs text-muted-foreground">
