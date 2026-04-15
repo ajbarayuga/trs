@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { QUOTE_BODY, QUOTE_DISPLAY } from "@/components/pdf/quotePdfFonts";
+import { quotePdfFontFamily } from "@/components/pdf/quotePdfFonts";
 import type { QuoteFormData } from "@/schema/quote";
 import type { LineItem } from "@/lib/calculateSOW";
 import { computeWorkPlan } from "@/lib/calculateWorkPlan";
@@ -44,7 +44,7 @@ const SECTION_TITLE_BLUE = "#4A90E2";
 const s = StyleSheet.create({
   pageCover: {
     backgroundColor: "#ffffff",
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     fontSize: 10,
     color: "#000000",
@@ -56,7 +56,7 @@ const s = StyleSheet.create({
   },
   pageInner: {
     backgroundColor: "#ffffff",
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     fontSize: 11,
     color: "#000000",
@@ -71,7 +71,7 @@ const s = StyleSheet.create({
     top: 32,
     left: COVER_MARGIN,
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_VERSION_REF,
   },
@@ -85,7 +85,7 @@ const s = StyleSheet.create({
     width: "100%",
     textAlign: "center",
     fontSize: 17,
-    fontFamily: QUOTE_DISPLAY,
+    fontFamily: quotePdfFontFamily.display,
     fontWeight: 700,
     color: "#000000",
     marginBottom: 6,
@@ -94,7 +94,7 @@ const s = StyleSheet.create({
     width: "100%",
     textAlign: "center",
     fontSize: 30,
-    fontFamily: QUOTE_DISPLAY,
+    fontFamily: quotePdfFontFamily.display,
     fontWeight: 700,
     color: "#000000",
     lineHeight: 1.12,
@@ -104,7 +104,7 @@ const s = StyleSheet.create({
     width: "100%",
     textAlign: "center",
     fontSize: 23,
-    fontFamily: QUOTE_DISPLAY,
+    fontFamily: quotePdfFontFamily.display,
     fontWeight: 400,
     color: "#000000",
     marginTop: 44,
@@ -116,7 +116,7 @@ const s = StyleSheet.create({
   },
   coverSectionLabel: {
     fontSize: 10.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_LABEL,
     marginBottom: 5,
@@ -124,7 +124,7 @@ const s = StyleSheet.create({
   },
   coverEntityLine: {
     fontSize: 21,
-    fontFamily: QUOTE_DISPLAY,
+    fontFamily: quotePdfFontFamily.display,
     fontWeight: 700,
     color: "#000000",
     lineHeight: 1.18,
@@ -133,7 +133,7 @@ const s = StyleSheet.create({
   },
   coverContactLine: {
     fontSize: 15,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_ACCENT,
     marginTop: 10,
@@ -142,7 +142,7 @@ const s = StyleSheet.create({
   },
   coverPhoneSmall: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_LABEL,
     marginBottom: 3,
@@ -150,7 +150,7 @@ const s = StyleSheet.create({
   },
   coverEmailSmall: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_ACCENT,
     textDecoration: "underline",
@@ -158,7 +158,7 @@ const s = StyleSheet.create({
   },
   coverVenueTitle: {
     fontSize: 15,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_ACCENT,
     marginBottom: 5,
@@ -167,7 +167,7 @@ const s = StyleSheet.create({
   },
   coverVenueDetail: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_LABEL,
     lineHeight: 1.45,
@@ -176,7 +176,7 @@ const s = StyleSheet.create({
   },
   coverProducerCompany: {
     fontSize: 21,
-    fontFamily: QUOTE_DISPLAY,
+    fontFamily: quotePdfFontFamily.display,
     fontWeight: 700,
     color: "#000000",
     marginBottom: 6,
@@ -185,7 +185,7 @@ const s = StyleSheet.create({
   },
   coverProducerName: {
     fontSize: 15,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_ACCENT,
     marginBottom: 5,
@@ -201,7 +201,7 @@ const s = StyleSheet.create({
   },
   coverSpecNote: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_LABEL,
     fontStyle: "italic",
@@ -215,7 +215,7 @@ const s = StyleSheet.create({
   },
   coverRefNumber: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: COVER_VERSION_REF,
     textAlign: "right",
@@ -230,7 +230,7 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: SECTION_TITLE_BLUE,
     textTransform: "uppercase",
@@ -246,7 +246,7 @@ const s = StyleSheet.create({
   },
   serviceSubTitle: {
     fontSize: 10.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: SECTION_TITLE_BLUE,
     textTransform: "uppercase",
@@ -268,7 +268,7 @@ const s = StyleSheet.create({
   },
   clientProvideTitle: {
     fontSize: 17,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#1A1A1A",
     letterSpacing: 0.12,
@@ -281,14 +281,14 @@ const s = StyleSheet.create({
   },
   clientProvideNum: {
     fontSize: 11.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     width: 18,
   },
   clientProvideText: {
     fontSize: 11.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     lineHeight: 1.38,
@@ -301,21 +301,21 @@ const s = StyleSheet.create({
   },
   clientProvideIndentLabel: {
     fontSize: 11.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     width: 16,
   },
   clientProvideIndentText: {
     fontSize: 11.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     lineHeight: 1.38,
     flex: 1,
   },
   clientProvideBold: {
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
   },
 
@@ -327,7 +327,7 @@ const s = StyleSheet.create({
   },
   bulletSymbol: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     marginRight: 6,
@@ -335,7 +335,7 @@ const s = StyleSheet.create({
   },
   bulletText: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     flex: 1,
@@ -343,7 +343,7 @@ const s = StyleSheet.create({
   },
   bulletTextBold: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
     flex: 1,
@@ -355,7 +355,7 @@ const s = StyleSheet.create({
   },
   subBulletSymbol: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#555555",
     marginRight: 6,
@@ -363,7 +363,7 @@ const s = StyleSheet.create({
   },
   subBulletText: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     flex: 1,
@@ -373,7 +373,7 @@ const s = StyleSheet.create({
   // ── Work plan ────────────────────────────────────────────────────────────────
   workPlanDateHeader: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: SECTION_TITLE_BLUE,
     marginBottom: 5,
@@ -388,7 +388,7 @@ const s = StyleSheet.create({
   },
   workPlanDash: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#555555",
     width: 12,
@@ -396,14 +396,14 @@ const s = StyleSheet.create({
   },
   workPlanTime: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     width: 82,
     color: "#000000",
   },
   workPlanDesc: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     flex: 1,
@@ -411,7 +411,7 @@ const s = StyleSheet.create({
   },
   workPlanNote: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     fontStyle: "italic",
     color: "#555555",
@@ -428,14 +428,14 @@ const s = StyleSheet.create({
   },
   locationLabel: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     width: 110,
     color: "#000000",
   },
   locationValue: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     flex: 1,
@@ -445,7 +445,7 @@ const s = StyleSheet.create({
   // ── Financials table (reference: black grid, gray section rows, white body) ─
   financialsTitle: {
     fontSize: 25,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     textAlign: "center",
     marginBottom: 20,
@@ -481,7 +481,7 @@ const s = StyleSheet.create({
   },
   tableHeaderCell: {
     fontSize: 10.5,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
     textAlign: "center",
@@ -498,7 +498,7 @@ const s = StyleSheet.create({
   },
   tableSectionLabel: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
     textTransform: "uppercase",
@@ -517,7 +517,7 @@ const s = StyleSheet.create({
   },
   tableSubSectionLabel: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
     textTransform: "uppercase",
@@ -557,7 +557,7 @@ const s = StyleSheet.create({
   colSubtotal: { width: "13%", borderRightWidth: 0 },
   cellName: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
     lineHeight: 1.35,
@@ -565,7 +565,7 @@ const s = StyleSheet.create({
   },
   cellDesc: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     lineHeight: 1.45,
@@ -573,7 +573,7 @@ const s = StyleSheet.create({
   },
   cellNum: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     textAlign: "center",
@@ -581,7 +581,7 @@ const s = StyleSheet.create({
   },
   cellNumBold: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
     textAlign: "center",
@@ -600,7 +600,7 @@ const s = StyleSheet.create({
   },
   totalText: {
     fontSize: 19,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: "#000000",
   },
@@ -615,14 +615,14 @@ const s = StyleSheet.create({
   },
   noteTitle: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     marginBottom: 4,
     color: SECTION_TITLE_BLUE,
   },
   noteText: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#333333",
     lineHeight: 1.5,
@@ -638,7 +638,7 @@ const s = StyleSheet.create({
     width: "100%",
     textAlign: "center",
     fontSize: 18,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     marginBottom: 6,
     marginTop: 2,
@@ -649,7 +649,7 @@ const s = StyleSheet.create({
     width: "100%",
     textAlign: "center",
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     marginBottom: 18,
@@ -659,7 +659,7 @@ const s = StyleSheet.create({
   },
   termsSectionTitle: {
     fontSize: 11,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     color: SECTION_TITLE_BLUE,
     marginBottom: 5,
@@ -671,14 +671,14 @@ const s = StyleSheet.create({
   },
   termsSubALabel: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 700,
     width: 18,
     color: "#000000",
   },
   termsSubAText: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     flex: 1,
@@ -691,14 +691,14 @@ const s = StyleSheet.create({
   },
   termsNumLabel: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     width: 16,
     color: "#000000",
   },
   termsNumText: {
     fontSize: 10,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
     flex: 1,
@@ -730,13 +730,13 @@ const s = StyleSheet.create({
   },
   pageFooterText: {
     fontSize: 9,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#555555",
   },
   pageFooterPageNum: {
     fontSize: 9,
-    fontFamily: QUOTE_BODY,
+    fontFamily: quotePdfFontFamily.body,
     fontWeight: 400,
     color: "#000000",
   },

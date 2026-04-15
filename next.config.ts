@@ -85,6 +85,15 @@ const nextConfig: NextConfig = {
     root: turbopackRoot,
   },
 
+  // Ensure @fontsource WOFF files ship with serverless PDF routes (Vercel trace
+  // can otherwise omit them → font registration / renderToBuffer failures → 500).
+  outputFileTracingIncludes: {
+    "/api/**/*": [
+      "./node_modules/@fontsource/arimo/files/**/*.woff",
+      "./node_modules/@fontsource/montserrat/files/**/*.woff",
+    ],
+  },
+
   // ── Packages that must not be bundled by webpack ───────────────────────────
   // @react-pdf/renderer uses native Node.js internals and dynamic requires
   // that break when webpack tries to bundle them. Marking it external tells

@@ -13,7 +13,7 @@ function errResponse(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export async function POST(req: NextRequest) {
+async function handleSendQuote(req: NextRequest) {
   // ── Rate limiting ────────────────────────────────────────────────────────
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
@@ -217,4 +217,16 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ message: "Success" });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    return await handleSendQuote(req);
+  } catch (e) {
+    console.error(
+      "[send-quote] Unhandled error:",
+      e instanceof Error ? e.stack ?? e.message : e,
+    );
+    return errResponse("Something went wrong. Please try again.", 500);
+  }
 }
