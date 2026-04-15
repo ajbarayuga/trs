@@ -12,31 +12,79 @@ import type { NextRequest } from "next/server";
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Allowed origins — must match your deployed domain(s) exactly.
-// Pulled from env so staging/production can differ without code changes.
-// In development, localhost origins are also allowed.
+function normalizeOrigin(url: string): string {
+  return url.replace(/\/$/, "");
+}
+
+/**
+ * Site URL(s) from env — comma-separated for multiple domains
+ * (e.g. production + www, or preview + production during migration).
+ */
+function originsFromSiteUrlEnv(): string[] {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => normalizeOrigin(s.trim()))
+    .filter(Boolean);
+}
+
+/**
+ * Vercel sets VERCEL_URL (no protocol) on every deployment, including previews.
+ * Without this, POSTs from *.vercel.app get 403 when NEXT_PUBLIC_SITE_URL only
+ * lists the production custom domain.
+ */
+function originsFromVercel(): string[] {
+  const host = process.env.VERCEL_URL?.replace(/^https?:\/\//i, "").trim();
+  if (!host) return [];
+  return [`https://${host}`, `http://${host}`];
+}
+
+// Allowed origins — must match browser Origin / Referer for same-site POSTs.
 function getAllowedOrigins(): string[] {
-  const origins: string[] = [];
+  const origins: string[] = [
+    ...originsFromSiteUrlEnv(),
+    ...originsFromVercel(),
+  ];
 
-  // Production / staging domain from env
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    origins.push(process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, ""));
-  }
-
-  // Always allow localhost in non-production environments
+  // Local dev: common ports (any other localhost port is matched in isOriginAllowed)
   if (process.env.NODE_ENV !== "production") {
-    origins.push("http://localhost:3000");
-    origins.push("http://localhost:3001");
-    origins.push("http://127.0.0.1:3000");
+    origins.push(
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:3001",
+    );
   }
 
-  return origins;
+  return [...new Set(origins)];
+}
+
+/** In dev, allow any localhost / 127.0.0.1 origin (any port). */
+function isDevLocalhostOrigin(origin: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  try {
+    const u = new URL(origin);
+    return (
+      (u.hostname === "localhost" || u.hostname === "127.0.0.1") &&
+      (u.protocol === "http:" || u.protocol === "https:")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
+  const n = normalizeOrigin(origin);
+  if (allowedOrigins.includes(n)) return true;
+  return isDevLocalhostOrigin(n);
 }
 
 // API routes that mutate state — these get CSRF + content-type checks
 const PROTECTED_API_ROUTES = [
   "/api/send-quote",
   "/api/generate-pdf",
+  "/api/generate-docx",
   "/api/contact-sales",
 ];
 
@@ -79,9 +127,9 @@ export function middleware(request: NextRequest) {
   // If Origin header is present, it must be in our allow-list
   if (origin !== null) {
     const normalizedOrigin = origin.replace(/\/$/, "");
-    if (!allowedOrigins.includes(normalizedOrigin)) {
+    if (!isOriginAllowed(normalizedOrigin, allowedOrigins)) {
       console.warn(
-        `[middleware] CSRF: blocked origin "${origin}" → ${pathname}`,
+        `[middleware] CSRF: blocked origin "${origin}" → ${pathname} (allowed: ${allowedOrigins.join(", ") || "(none)"})`,
       );
       return new NextResponse(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
@@ -93,7 +141,7 @@ export function middleware(request: NextRequest) {
     try {
       const refererUrl = new URL(referer);
       const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
-      if (!allowedOrigins.includes(refererOrigin)) {
+      if (!isOriginAllowed(refererOrigin, allowedOrigins)) {
         console.warn(
           `[middleware] CSRF: blocked referer "${referer}" → ${pathname}`,
         );

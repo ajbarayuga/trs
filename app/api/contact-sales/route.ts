@@ -5,8 +5,6 @@ import { LeadCaptureSchema } from "@/schema/quote";
 import { escapeHtml } from "@/lib/utils";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 function errResponse(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
@@ -26,10 +24,12 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Env guards ────────────────────────────────────────────────────────────
-  if (!process.env.RESEND_API_KEY) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
     console.error("[contact-sales] RESEND_API_KEY is not set");
     return errResponse("Email service is not configured", 503);
   }
+  const resend = new Resend(resendApiKey);
   const salesEmail = process.env.SALES_EMAIL;
   if (!salesEmail) {
     console.error("[contact-sales] SALES_EMAIL env var is not set");
