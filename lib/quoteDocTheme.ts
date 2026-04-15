@@ -1,6 +1,8 @@
 /**
  * Shared visual tokens for quote PDF (`QuoteDocument`) and Word export (`buildQuoteDocx`).
  * Keep hex strings without `#` where docx `color` expects none — docx helpers add as needed.
+ * In-flow section headings use SECTION_TITLE_BLUE; the standalone “Detailed Financials”
+ * page title uses BLACK (same as PDF `financialsTitle`).
  */
 export const QUOTE_DOC_THEME = {
   SECTION_TITLE_BLUE: "4A90E2",

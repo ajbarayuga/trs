@@ -5,6 +5,7 @@ import type { LineItem } from "@/lib/calculateSOW";
 import { computeWorkPlan } from "@/lib/calculateWorkPlan";
 import { groupLineItems } from "@/lib/quoteLineItemGroups";
 import { fmt } from "@/lib/utils";
+import { QUOTE_DOC_THEME } from "@/lib/quoteDocTheme";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ const COVER_MARGIN = 72;
 const COVER_ACCENT = "#6495ED";
 const COVER_LABEL = "#666666";
 const COVER_VERSION_REF = "#999999";
-/** Reference Detailed Financials: 1px black rules, light gray section bands */
+/** Detailed Financials grid: 1px black rules, light gray section bands; page title is black */
 const TABLE_BORDER = "#000000";
 const TABLE_SECTION_BG = "#D3D3D3";
 /** Client Will Provide header bar (reference: light pink band behind title) */
@@ -450,7 +451,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     marginTop: 4,
-    color: SECTION_TITLE_BLUE,
+    color: `#${QUOTE_DOC_THEME.BLACK}`,
     letterSpacing: 0.2,
   },
   tableWrapper: {

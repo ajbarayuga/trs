@@ -1001,14 +1001,16 @@ export function buildQuoteDocxDocument(
         tr("Detailed Financials", {
           bold: true,
           sizePt: 25,
-          color: T.SECTION_TITLE_BLUE,
+          color: T.BLACK,
         }),
       ],
     }),
     buildFinancialTable(g),
     new Paragraph({
       spacing: { before: 240, after: 120 },
-      children: [tr(`Total: ${fmt(subtotal)}`, { bold: true, sizePt: 19 })],
+      children: [
+        tr(`Total: ${fmt(subtotal)}`, { bold: true, sizePt: 19, color: T.BLACK }),
+      ],
     }),
     new Paragraph({ spacing: { before: 200 } }),
     estimateNoteTable(),
