@@ -45,6 +45,7 @@ function getAllowedOrigins(): string[] {
   const origins: string[] = [
     ...originsFromSiteUrlEnv(),
     ...originsFromVercel(),
+    ...originsFromCsrfAllowlist(),
   ];
 
   // Local dev: common ports (any other localhost port is matched in isOriginAllowed)
@@ -78,6 +79,62 @@ function isOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
   const n = normalizeOrigin(origin);
   if (allowedOrigins.includes(n)) return true;
   return isDevLocalhostOrigin(n);
+}
+
+/**
+ * Optional comma-separated list of extra allowed origins (server env, not
+ * NEXT_PUBLIC_*), e.g. `https://www.example.com,https://staging.example.com`.
+ */
+function originsFromCsrfAllowlist(): string[] {
+  const raw = process.env.CSRF_ALLOWED_ORIGINS?.trim();
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => normalizeOrigin(s.trim()))
+    .filter(Boolean);
+}
+
+/** Strip default ports so `origin:443` matches `host` without port. */
+function stripDefaultPort(host: string): string {
+  const h = host.toLowerCase();
+  if (h.endsWith(":443")) return h.slice(0, -4);
+  if (h.endsWith(":80")) return h.slice(0, -3);
+  return h;
+}
+
+/**
+ * Public host this request was made to (custom domain on Vercel, etc.).
+ * Prefer x-forwarded-host, then Host, then the URL Next parsed (covers odd proxies).
+ */
+function getIncomingRequestHost(request: NextRequest): string | null {
+  const xf = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const hdr = request.headers.get("host")?.trim();
+  const fromUrl = request.nextUrl.host;
+  const raw = (xf || hdr || fromUrl || "").trim();
+  if (!raw) return null;
+  return stripDefaultPort(raw);
+}
+
+/**
+ * Same-site browser POST: Origin host matches the request Host / forwarded host.
+ * Fixes www vs apex, preview URLs, and :443 vs bare host mismatches.
+ */
+function isSameSiteOrigin(origin: string, request: NextRequest): boolean {
+  try {
+    const o = new URL(origin);
+    const originHost = stripDefaultPort(o.host.toLowerCase());
+    const reqHost = getIncomingRequestHost(request);
+    return reqHost !== null && originHost === reqHost;
+  } catch {
+    return false;
+  }
+}
+
+/** Treat missing Origin the same as absent (some stacks send the literal "null"). */
+function originHeaderIsPresent(origin: string | null): boolean {
+  if (origin === null) return false;
+  const t = origin.trim();
+  return t.length > 0 && t.toLowerCase() !== "null";
 }
 
 // API routes that mutate state — these get CSRF + content-type checks
@@ -124,12 +181,16 @@ export function middleware(request: NextRequest) {
   const referer = request.headers.get("referer");
   const allowedOrigins = getAllowedOrigins();
 
-  // If Origin header is present, it must be in our allow-list
-  if (origin !== null) {
-    const normalizedOrigin = origin.replace(/\/$/, "");
-    if (!isOriginAllowed(normalizedOrigin, allowedOrigins)) {
+  // If Origin is present and parseable, it must match allowlist or same-site host
+  if (originHeaderIsPresent(origin)) {
+    const normalizedOrigin = origin!.replace(/\/$/, "");
+    const ok =
+      isOriginAllowed(normalizedOrigin, allowedOrigins) ||
+      isSameSiteOrigin(origin!, request);
+    if (!ok) {
+      const reqHost = getIncomingRequestHost(request);
       console.warn(
-        `[middleware] CSRF: blocked origin "${origin}" → ${pathname} (allowed: ${allowedOrigins.join(", ") || "(none)"})`,
+        `[middleware] CSRF: blocked origin "${origin}" → ${pathname} (request host: ${reqHost ?? "?"}; nextUrl: ${request.nextUrl.host}; allowlist: ${allowedOrigins.join(" | ") || "(empty)"})`,
       );
       return new NextResponse(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
@@ -141,7 +202,10 @@ export function middleware(request: NextRequest) {
     try {
       const refererUrl = new URL(referer);
       const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
-      if (!isOriginAllowed(refererOrigin, allowedOrigins)) {
+      const okRef =
+        isOriginAllowed(refererOrigin, allowedOrigins) ||
+        isSameSiteOrigin(refererOrigin, request);
+      if (!okRef) {
         console.warn(
           `[middleware] CSRF: blocked referer "${referer}" → ${pathname}`,
         );
@@ -169,16 +233,17 @@ export function middleware(request: NextRequest) {
   //   });
   // }
 
-  // ── 3. Basic bot signal check ────────────────────────────────────────────
-  // Reject obviously automated requests that lack a User-Agent entirely.
-  // Real browsers always send this header.
-  const userAgent = request.headers.get("user-agent");
-  if (!userAgent || userAgent.trim().length === 0) {
-    console.warn(`[middleware] Blocked headless request → ${pathname}`);
-    return new NextResponse(JSON.stringify({ error: "Forbidden" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
+  // Optional: block empty User-Agent (can false-positive privacy tools / WebViews).
+  // Set REQUIRE_USER_AGENT=1 on Vercel to enable; off by default.
+  if (process.env.REQUIRE_USER_AGENT === "1") {
+    const userAgent = request.headers.get("user-agent");
+    if (!userAgent?.trim()) {
+      console.warn(`[middleware] Blocked headless request → ${pathname}`);
+      return new NextResponse(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   }
 
   return NextResponse.next();
