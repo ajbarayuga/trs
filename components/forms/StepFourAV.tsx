@@ -111,7 +111,7 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
               audioServices.includes("pa")
                 ? "border-primary bg-primary/5"
                 : mainServiceMissing
-                  ? "border-destructive bg-destructive/5 ring-2 ring-destructive"
+                  ? "border-field-error bg-destructive/5 ring-2 ring-field-error"
                   : "border-border",
             )}
             onClick={() => toggleArray("audioServices", "pa")}

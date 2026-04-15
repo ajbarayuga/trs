@@ -42,7 +42,7 @@ function shellRowErr(hasError: boolean) {
   return cn(
     "flex items-center gap-3 p-3 bg-background border-2 rounded-sm transition-colors",
     hasError
-      ? "border-destructive ring-2 ring-destructive bg-destructive/5"
+      ? "border-field-error ring-2 ring-field-error bg-destructive/5"
       : "border-border",
   );
 }
@@ -74,7 +74,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
       <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
         <Alert
           variant="destructive"
-          className="bg-destructive/5 border-destructive p-8 rounded-sm border-2"
+          className="bg-destructive/5 border-field-error p-8 rounded-sm border-2"
         >
           <InfoIcon className="h-6 w-6" />
           <AlertTitle className="text-xl font-bold mb-2">
@@ -768,7 +768,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                     (errors.clientName ||
                       errors.clientPhone ||
                       errors.organization) &&
-                      "rounded-sm border-2 border-destructive bg-destructive/5 p-3 ring-2 ring-destructive",
+                      "rounded-sm border-2 border-field-error bg-destructive/5 p-3 ring-2 ring-field-error",
                   )}
                 >
                   <div className="space-y-1">
@@ -859,7 +859,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                 className={cn(
                   "space-y-1 rounded-sm p-2 -m-2",
                   errors.additionalPOC &&
-                    "border-2 border-destructive bg-destructive/5 ring-2 ring-destructive",
+                    "border-2 border-field-error bg-destructive/5 ring-2 ring-field-error",
                 )}
               >
                 <Input
@@ -868,7 +868,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                   className={cn(
                     "rounded-sm animate-in slide-in-from-top-2 border-2 h-11",
                     errors.additionalPOC
-                      ? "border-destructive ring-1 ring-destructive"
+                      ? "border-field-error ring-1 ring-field-error"
                       : "border-border",
                   )}
                 />
@@ -997,7 +997,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                 className={cn(
                   "relative rounded-sm transition-colors",
                   errors.deliveryEmail &&
-                    "ring-2 ring-destructive bg-destructive/5 p-1",
+                    "ring-2 ring-field-error bg-destructive/5 p-1 border-2 border-field-error rounded-sm",
                 )}
               >
                 <Mail
@@ -1016,7 +1016,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                   className={cn(
                     "pl-11 h-12 rounded-sm border-2 transition-colors",
                     errors.deliveryEmail
-                      ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive"
+                      ? "border-field-error focus-visible:border-field-error focus-visible:ring-field-error"
                       : "border-primary/10 focus:border-primary",
                   )}
                 />

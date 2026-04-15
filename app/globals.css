@@ -27,12 +27,19 @@
   --color-destructive-foreground: oklch(0.985 0 0);
 }
 
-@layer base {
-  *,
-  ::after,
-  ::before {
-    border-color: var(--color-border);
+/* Error field shells: explicit red border + ring (wins over any stray border-color rules) */
+@layer utilities {
+  .border-field-error {
+    border-color: var(--color-destructive, #dc2626) !important;
   }
+  .ring-field-error {
+    --tw-ring-color: var(--color-destructive, #dc2626);
+  }
+}
+
+@layer base {
+  /* Do not set border-color on * — it overrides Tailwind utilities like
+     border-destructive on field shells (same specificity; order made borders gray/black). */
 
   body {
     background-color: var(--color-background);

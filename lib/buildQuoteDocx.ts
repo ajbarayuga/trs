@@ -21,6 +21,19 @@ import { QUOTE_DOC_THEME as T } from "@/lib/quoteDocTheme";
 const FONT = "Arial";
 const pt = (value: number) => Math.round(value * 2);
 
+function asciiSafe(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[‐‑‒–—―−]/g, "-")
+    .replace(/[•●○◦▪■]/g, "-")
+    .replace(/×/g, "x")
+    .replace(/·/g, "|")
+    .replace(/→/g, "->")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^\x20-\x7E\n\r\t]/g, "");
+}
+
 /** ~10pt cell padding (twips: 1 pt ≈ 20 twips) */
 const CELL_PAD = 200;
 const BORDER_1PT = { style: BorderStyle.SINGLE, size: 8, color: T.TABLE_BORDER } as const;
@@ -43,7 +56,7 @@ function tr(
   },
 ): TextRun {
   return new TextRun({
-    text,
+    text: asciiSafe(text),
     font: FONT,
     bold: opts?.bold,
     italics: opts?.italics,
@@ -96,7 +109,7 @@ function serviceSubParagraph(title: string): Paragraph {
 }
 
 function bulletParagraph(text: string, boldLead?: string): Paragraph {
-  const children: TextRun[] = [tr("○ ", { sizePt: 11 })];
+  const children: TextRun[] = [tr("- ", { sizePt: 11 })];
   if (boldLead) {
     children.push(tr(boldLead, { bold: true, sizePt: 11 }));
     children.push(tr(text.slice(boldLead.length), { sizePt: 11 }));
@@ -114,7 +127,7 @@ function subBulletParagraph(text: string): Paragraph {
   return new Paragraph({
     spacing: { after: 50 },
     indent: { left: 320 },
-    children: [tr("■ ", { sizePt: 10, color: "555555" }), tr(text, { sizePt: 11 })],
+    children: [tr("- ", { sizePt: 10, color: "555555" }), tr(text, { sizePt: 11 })],
   });
 }
 

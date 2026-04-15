@@ -80,7 +80,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
               services.includes("streaming")
                 ? "border-primary bg-primary/5"
                 : mainServiceMissing
-                  ? "border-destructive bg-destructive/5 ring-2 ring-destructive"
+                  ? "border-field-error bg-destructive/5 ring-2 ring-field-error"
                   : "border-border",
             )}
             onClick={() => toggleArray("services", "streaming")}
@@ -273,7 +273,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
               services.includes("video")
                 ? "border-primary bg-primary/5"
                 : mainServiceMissing
-                  ? "border-destructive bg-destructive/5 ring-2 ring-destructive"
+                  ? "border-field-error bg-destructive/5 ring-2 ring-field-error"
                   : "border-border",
             )}
             onClick={() => toggleArray("services", "video")}

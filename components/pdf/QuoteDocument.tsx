@@ -23,6 +23,19 @@ function formatDate(dateStr: string | undefined): string {
   }
 }
 
+function pdfSafe(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[‐‑‒–—―−]/g, "-")
+    .replace(/[•●○◦▪■]/g, "-")
+    .replace(/×/g, "x")
+    .replace(/·/g, "|")
+    .replace(/→/g, "->")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^\x20-\x7E\n\r\t]/g, "");
+}
+
 // ─── design tokens (Jones Room reference: Arial + Proxima Nova; see quotePdfFonts) ─
 
 const MARGIN = 54;
@@ -748,8 +761,9 @@ const s = StyleSheet.create({
 function BulletRow({ text, bold }: { text: string; bold?: boolean }) {
   return (
     <View style={s.bulletRow}>
-      <Text style={s.bulletSymbol}>○</Text>
-      <Text style={bold ? s.bulletTextBold : s.bulletText}>{text}</Text>
+      <Text style={bold ? s.bulletTextBold : s.bulletText}>
+        {`- ${pdfSafe(text)}`}
+      </Text>
     </View>
   );
 }
@@ -757,8 +771,7 @@ function BulletRow({ text, bold }: { text: string; bold?: boolean }) {
 function SubBulletRow({ text }: { text: string }) {
   return (
     <View style={s.subBulletRow}>
-      <Text style={s.subBulletSymbol}>■</Text>
-      <Text style={s.subBulletText}>{text}</Text>
+      <Text style={s.subBulletText}>{`- ${pdfSafe(text)}`}</Text>
     </View>
   );
 }
@@ -804,10 +817,10 @@ function FinancialDataRow({ item }: { item: LineItem }) {
   return (
     <View style={s.tableDataRow} wrap={false}>
       <View style={[s.tableBodyCol, s.colName, s.tableBodyColName]}>
-        <Text style={s.cellName}>{item.name}</Text>
+        <Text style={s.cellName}>{pdfSafe(item.name)}</Text>
       </View>
       <View style={[s.tableBodyCol, s.colDesc, s.tableBodyColDesc]}>
-        <Text style={s.cellDesc}>{item.description}</Text>
+        <Text style={s.cellDesc}>{pdfSafe(item.description)}</Text>
       </View>
       <View
         style={[s.tableBodyCol, s.colUnits, s.tableBodyColNumeric]}
@@ -855,15 +868,18 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
   const refNum = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
   const versionLabel = `${versionDate} Version`;
 
-  const eventName = data.eventName ?? "Untitled Event";
-  const venueName = data.venueName ?? "TBD";
-  const clientName = data.clientName ?? "TBD";
-  const clientPhone = data.clientPhone ?? "";
-  const org = data.organization ?? "";
-  const eventDate =
-    data.hasDate && data.eventDate ? formatDate(data.eventDate) : "TBD";
-  const duration = data.hasDuration ? `${data.durationHours} hours` : "TBD";
-  const setting = data.setting === "outdoor" ? "Outdoor" : "Indoor";
+  const eventName = pdfSafe(data.eventName ?? "Untitled Event");
+  const venueName = pdfSafe(data.venueName ?? "TBD");
+  const clientName = pdfSafe(data.clientName ?? "TBD");
+  const clientPhone = pdfSafe(data.clientPhone ?? "");
+  const org = pdfSafe(data.organization ?? "");
+  const eventDate = pdfSafe(
+    data.hasDate && data.eventDate ? formatDate(data.eventDate) : "TBD",
+  );
+  const duration = pdfSafe(
+    data.hasDuration ? `${data.durationHours} hours` : "TBD",
+  );
+  const setting = pdfSafe(data.setting === "outdoor" ? "Outdoor" : "Indoor");
 
   const hasStreaming = data.services?.includes("streaming") ?? false;
   const hasVideo = data.services?.includes("video") ?? false;
@@ -877,7 +893,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
       hasPA ? "Audio / PA" : null,
     ]
       .filter(Boolean)
-      .join(" · ") || "Production Estimate";
+      .join(" | ") || "Production Estimate";
 
   const workPlan = computeWorkPlan(data);
 
@@ -904,7 +920,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
 
   return (
     <Document
-      title={`Production Estimate — ${eventName}`}
+      title={pdfSafe(`Production Estimate - ${eventName}`)}
       author="The Recording Service LLC"
     >
       {/* ════════════════════════════════════════════════════════════════
@@ -943,7 +959,9 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <Text style={s.coverPhoneSmall}>{clientPhone}</Text>
               ) : null}
               {data.deliveryEmail ? (
-                <Text style={s.coverEmailSmall}>{data.deliveryEmail}</Text>
+              <Text style={s.coverEmailSmall}>
+                {pdfSafe(data.deliveryEmail)}
+              </Text>
               ) : null}
             </>
           ) : (
@@ -1025,7 +1043,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
             <View style={s.clientProvideIndentRow}>
               <Text style={s.clientProvideIndentLabel}>{nextSubLabel()}</Text>
               <Text style={s.clientProvideIndentText}>
-                Venue access for site visit — Producer will evaluate built-in AV
+                Venue access for site visit - Producer will evaluate built-in AV
                 and apply discounts accordingly
               </Text>
             </View>
@@ -1045,7 +1063,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
             {!data.isZoomOnly && (
               <>
                 <BulletRow
-                  text={`CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) — ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`}
+                  text={`CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`}
                 />
                 {data.streamGraphics && (
                   <BulletRow text="STREAM GRAPHICS: On-screen overlays and branding prepared" />
@@ -1070,7 +1088,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <SubBulletRow text="2x Mirrorless camera kit + Studio lighting kit" />
                 <SubBulletRow text="Production Lead + Lighting Technician" />
                 <SubBulletRow
-                  text={`${data.podcastEpisodes ?? 1} episode(s) — ${data.podcastDuration ?? 1} hr recording session each`}
+                  text={`${data.podcastEpisodes ?? 1} episode(s) - ${data.podcastDuration ?? 1} hr recording session each`}
                 />
                 <SubBulletRow text="Guests should arrive at least 15 minutes before filming to be mic'd up" />
               </>
@@ -1080,7 +1098,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <BulletRow text="WEB VIDEO" bold />
                 <SubBulletRow text="Mirrorless camera kit + Studio lighting kit" />
                 <SubBulletRow
-                  text={`${data.webVideoPeople ?? 1} person(s) filmed — ${data.webVideoCount ?? 1} video(s) produced — up to ${data.webVideoDuration ?? 3} min each`}
+                  text={`${data.webVideoPeople ?? 1} person(s) filmed - ${data.webVideoCount ?? 1} video(s) produced - up to ${data.webVideoDuration ?? 3} min each`}
                 />
                 <SubBulletRow text="Guests should arrive at least 15 minutes before filming to be mic'd up" />
               </>
@@ -1088,9 +1106,9 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
             {activeVideoTypes.includes("highlight") && (
               <>
                 <BulletRow text="EVENT HIGHLIGHT" bold />
-                <SubBulletRow text="Mirrorless camera kit — in 30 min, out 30 min" />
+                <SubBulletRow text="Mirrorless camera kit - in 30 min, out 30 min" />
                 <SubBulletRow
-                  text={`Recording duration: ${data.highlightDurationHours ?? 4} hr(s) — ${(data.highlightDurationHours ?? 4) < 4 ? "Half Day Rate" : "Full Day Rate"}`}
+                  text={`Recording duration: ${data.highlightDurationHours ?? 4} hr(s) - ${(data.highlightDurationHours ?? 4) < 4 ? "Half Day Rate" : "Full Day Rate"}`}
                 />
                 <SubBulletRow text="Delivered as a creative highlight reel" />
               </>
@@ -1100,7 +1118,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <BulletRow text="LECTURE OR PANEL DISCUSSION" bold />
                 <SubBulletRow text="Camcorder kit + AV essential kit" />
                 <SubBulletRow
-                  text={`${data.lectureTalksCount ?? 1} talk(s) — ${data.lectureTalkDuration ?? "up to 1hr"} each`}
+                  text={`${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`}
                 />
                 {data.lecturePPT && (
                   <SubBulletRow text="Includes PowerPoint slide recording and integration" />
@@ -1127,24 +1145,24 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
               <>
                 {(data.micWirelessHandheld ?? 0) > 0 && (
                   <SubBulletRow
-                    text={`Wireless Handheld Mic ×${data.micWirelessHandheld}`}
+                    text={`Wireless Handheld Mic x${data.micWirelessHandheld}`}
                   />
                 )}
                 {(data.micWirelessLav ?? 0) > 0 && (
                   <SubBulletRow
-                    text={`Wireless Lav Mic ×${data.micWirelessLav}`}
+                    text={`Wireless Lav Mic x${data.micWirelessLav}`}
                   />
                 )}
                 {(data.micWiredSM58 ?? 0) > 0 && (
-                  <SubBulletRow text={`Wired SM58 ×${data.micWiredSM58}`} />
+                  <SubBulletRow text={`Wired SM58 x${data.micWiredSM58}`} />
                 )}
                 {(data.micWiredGooseneck ?? 0) > 0 && (
                   <SubBulletRow
-                    text={`Wired Gooseneck ×${data.micWiredGooseneck}`}
+                    text={`Wired Gooseneck x${data.micWiredGooseneck}`}
                   />
                 )}
                 {data.micNotSure && (
-                  <SubBulletRow text="Mic quantity TBD — Producer will follow up" />
+                  <SubBulletRow text="Mic quantity TBD - Producer will follow up" />
                 )}
               </>
             )}
@@ -1153,15 +1171,15 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
             )}
             {data.vogEnabled && (
               <SubBulletRow
-                text={`Voice of God mic — ${data.vogAnnouncer === "tech" ? "announced by our audio tech" : "announced by client team"}`}
+                text={`Voice of God mic - ${data.vogAnnouncer === "tech" ? "announced by our audio tech" : "announced by client team"}`}
               />
             )}
             {data.monitorsEnabled && (data.monitors ?? 0) > 0 && (
-              <SubBulletRow text={`Stage monitor wedges ×${data.monitors}`} />
+              <SubBulletRow text={`Stage monitor wedges x${data.monitors}`} />
             )}
             {(data.attendance ?? 0) > 0 && (
               <SubBulletRow
-                text={`Expected attendance: ${data.attendance} — speaker count calculated accordingly`}
+                text={`Expected attendance: ${data.attendance} - speaker count calculated accordingly`}
               />
             )}
           </>
@@ -1172,24 +1190,26 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           <>
             <SectionHeading title="Work Plan (day-by-day)" />
             {workPlan.dateHeader ? (
-              <Text style={s.workPlanDateHeader}>{workPlan.dateHeader}</Text>
+              <Text style={s.workPlanDateHeader}>
+                {pdfSafe(workPlan.dateHeader)}
+              </Text>
             ) : null}
             {workPlan.rows.map((row, i) => (
               <View key={i} style={s.workPlanRow}>
                 <Text style={s.workPlanDash}>-</Text>
-                <Text style={s.workPlanTime}>{row.time}</Text>
-                <Text style={s.workPlanDesc}>{row.description}</Text>
+                <Text style={s.workPlanTime}>{pdfSafe(row.time)}</Text>
+                <Text style={s.workPlanDesc}>{pdfSafe(row.description)}</Text>
               </View>
             ))}
             {workPlan.usedDefaultTime && (
               <Text style={s.workPlanNote}>
-                * Times are approximate — based on an assumed 12:00 PM show
+                * Times are approximate - based on an assumed 12:00 PM show
                 start. Your Production Lead will confirm the final schedule.
               </Text>
             )}
             {workPlan.cocktailTimeUnknown && (
               <Text style={s.workPlanNote}>
-                * Reception end time not shown — provide a program end time or
+                * Reception end time not shown - provide a program end time or
                 duration for a complete work plan.
               </Text>
             )}
@@ -1201,7 +1221,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
         <BulletRow
           text={
             data.setting === "outdoor"
-              ? "TBD — your Production Lead will discuss a rain contingency plan before your event."
+              ? "TBD - your Production Lead will discuss a rain contingency plan before your event."
               : "N/A"
           }
         />
@@ -1234,7 +1254,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           <View style={s.locationRow}>
             <Text style={s.locationLabel}>AV Assessment</Text>
             <Text style={s.locationValue}>
-              Site visit requested — Producer will evaluate and apply discounts
+              Site visit requested - Producer will evaluate and apply discounts
               accordingly
             </Text>
           </View>
@@ -1427,7 +1447,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           <Text style={s.termsSectionTitle}>II. Cancellation Fee</Text>
           <View style={s.termsSubARow}>
             <Text style={s.termsSubALabel}>A.</Text>
-            <Text style={s.termsSubAText}>30–6 Days Before Event:</Text>
+            <Text style={s.termsSubAText}>30-6 Days Before Event:</Text>
           </View>
           <View style={s.termsNumRow}>
             <Text style={s.termsNumLabel}>1.</Text>
@@ -1449,7 +1469,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           </View>
           <View style={s.termsSubARow}>
             <Text style={s.termsSubALabel}>B.</Text>
-            <Text style={s.termsSubAText}>5–1 Day Before Event:</Text>
+            <Text style={s.termsSubAText}>5-1 Day Before Event:</Text>
           </View>
           <View style={s.termsNumRow}>
             <Text style={s.termsNumLabel}>1.</Text>
@@ -1590,7 +1610,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           <View style={s.termsSubARow}>
             <Text style={s.termsSubALabel}>A.</Text>
             <Text style={s.termsSubAText}>
-              The following holidays are billed at 1.5× labor rate:
+              The following holidays are billed at 1.5x labor rate:
             </Text>
           </View>
           {[
@@ -1609,7 +1629,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
           <View style={s.termsSubARow}>
             <Text style={s.termsSubALabel}>B.</Text>
             <Text style={s.termsSubAText}>
-              The following holidays are billed at 2× labor rate:
+              The following holidays are billed at 2x labor rate:
             </Text>
           </View>
           {["Thanksgiving", "Christmas Eve", "Christmas Day"].map((h, i) => (
