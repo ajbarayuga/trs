@@ -61,7 +61,19 @@ export async function POST(req: NextRequest) {
     items,
     subtotal,
   }) as any;
-  const pdfBuffer = await renderToBuffer(element);
+  let pdfBuffer: Buffer;
+  try {
+    pdfBuffer = await renderToBuffer(element);
+  } catch (e) {
+    console.error(
+      "[generate-pdf] PDF generation failed:",
+      e instanceof Error ? e.message : e,
+    );
+    return NextResponse.json(
+      { error: "PDF generation failed" },
+      { status: 500 },
+    );
+  }
 
   const fileName = `quote-${(data.eventName ?? "estimate")
     .toLowerCase()
