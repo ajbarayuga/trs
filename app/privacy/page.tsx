@@ -678,7 +678,7 @@ export default function QuotePage() {
                           ) : (
                             <>
                               <Send className="w-4 h-4" />
-                              Email me this quote!
+                              Generate Quote
                             </>
                           )}
                         </Button>

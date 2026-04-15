@@ -657,11 +657,14 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
               <Label className="text-[10px] uppercase font-black tracking-widest text-primary">
                 Event Name
               </Label>
-              <Input
-                {...register("eventName")}
-                placeholder="Name of your event..."
-                className="rounded-sm bg-background border-2"
-              />
+              <div className="flex items-center gap-3 p-3 bg-background border-2 rounded-sm">
+                <Calendar className="w-4 h-4 text-primary" />
+                <Input
+                  {...register("eventName")}
+                  placeholder="Name of your event..."
+                  className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-black tracking-widest text-primary">
@@ -672,7 +675,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                 <Input
                   {...register("venueName")}
                   placeholder="Where is it happening?"
-                  className="border-none p-0 focus-visible:ring-0 h-auto"
+                  className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
                 />
               </div>
             </div>
