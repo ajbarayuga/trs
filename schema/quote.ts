@@ -185,7 +185,11 @@ export const QuoteFormSchema = z.object({
   clientName: z.string().trim().max(MAX.name).optional(),
   clientPhone: z.string().trim().max(MAX.phone).optional(),
   organization: z.string().trim().max(MAX.name).optional(),
-  venueName: z.string().trim().max(MAX.venueName).optional(),
+  venueName: z
+    .string()
+    .trim()
+    .min(1, "Venue name is required")
+    .max(MAX.venueName, "Venue name is too long"),
   hasAdditionalPOC: z.boolean().default(false),
   additionalPOC: z.string().trim().max(MAX.additionalPOC).optional(),
 
@@ -193,17 +197,67 @@ export const QuoteFormSchema = z.object({
 
   deliveryEmail: z
     .string()
+    .trim()
+    .min(1, "Delivery email is required")
     .email("Please provide a valid email to receive your quote")
     .max(MAX.email)
-    .toLowerCase()
-    .default(""),
+    .toLowerCase(),
   newsletterConsent: z.boolean().default(false),
   feedback: z
     .string()
     .trim()
     .max(MAX.feedback, "Feedback is too long (1,000 character limit)")
     .optional(),
-});
+})
+  .superRefine((data, ctx) => {
+    const services = data.services ?? [];
+    const audio = data.audioServices ?? [];
+    const hasMainService =
+      services.includes("streaming") ||
+      services.includes("video") ||
+      audio.includes("pa");
+    if (!hasMainService) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Select at least one main service: Live Streaming, Video Production, or Audio / PA.",
+        path: ["services"],
+      });
+    }
+
+    if (!data.isSpecQuote) {
+      if (!data.clientName?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Full name is required",
+          path: ["clientName"],
+        });
+      }
+      const phoneDigits = (data.clientPhone ?? "").replace(/\D/g, "");
+      if (phoneDigits.length < 7) {
+        ctx.addIssue({
+          code: "custom",
+          message: "A valid phone number is required",
+          path: ["clientPhone"],
+        });
+      }
+      if (!data.organization?.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Organization or company is required",
+          path: ["organization"],
+        });
+      }
+    }
+
+    if (data.hasAdditionalPOC && !data.additionalPOC?.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter the additional contact's name and email",
+        path: ["additionalPOC"],
+      });
+    }
+  });
 
 export type LeadCaptureData = z.infer<typeof LeadCaptureSchema>;
 export type QuoteFormData = z.infer<typeof QuoteFormSchema>;

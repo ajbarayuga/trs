@@ -73,8 +73,11 @@ async function handleSendQuote(req: NextRequest) {
     0,
   );
 
-  if (!data.deliveryEmail) {
-    return errResponse("A delivery email address is required", 422);
+  if (subtotal <= 0) {
+    return errResponse(
+      "This quote has no billable total. Add services or equipment before sending.",
+      422,
+    );
   }
 
   const fromAddress = process.env.FROM_EMAIL ?? "onboarding@resend.dev";

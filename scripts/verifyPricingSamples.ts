@@ -7,13 +7,23 @@ type Case = {
   input: Record<string, unknown>;
 };
 
+const quoteContactBase = {
+  eventName: "Pricing sample",
+  venueName: "Sample Venue",
+  deliveryEmail: "sample@example.com",
+  clientName: "Sample Client",
+  clientPhone: "7706963139",
+  organization: "Emory",
+  isSpecQuote: false,
+};
+
 const cases: Case[] = [
   {
     name: "INDOOR SOUNDSYSTEM",
     expected: 954.8,
     input: {
+      ...quoteContactBase,
       eventType: "live",
-      organization: "Emory",
       hasDuration: true,
       durationHours: 1,
       setting: "indoor",
@@ -26,8 +36,8 @@ const cases: Case[] = [
     name: "OUTDOOR SOUNDSYSTEM",
     expected: 1167.18,
     input: {
+      ...quoteContactBase,
       eventType: "live",
-      organization: "Emory",
       hasDuration: true,
       durationHours: 1.5,
       setting: "outdoor",
@@ -40,8 +50,8 @@ const cases: Case[] = [
     name: "LIVE STREAMING",
     expected: 2780.06,
     input: {
+      ...quoteContactBase,
       eventType: "live",
-      organization: "Emory",
       hasDuration: true,
       durationHours: 1.5,
       services: ["streaming"],
@@ -57,8 +67,8 @@ const cases: Case[] = [
     name: "VIDEO RECORDING",
     expected: 1121.23,
     input: {
+      ...quoteContactBase,
       eventType: "live",
-      organization: "Emory",
       hasDuration: true,
       durationHours: 1,
       services: ["video"],

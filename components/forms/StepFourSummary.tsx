@@ -28,6 +28,7 @@ import {
   MessageSquareHeart,
   Calendar,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -607,6 +608,18 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
           SECTION 1: IT'S ALL ABOUT YOU (unchanged from original)
       ═══════════════════════════════════════════════════════════════════ */}
       <div className="space-y-6 pt-10 border-double">
+        {errors.services && (
+          <Alert variant="destructive" className="rounded-sm border-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle className="text-xs font-bold uppercase tracking-wide">
+              Services required
+            </AlertTitle>
+            <AlertDescription className="text-sm">
+              {errors.services.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b pb-6">
           <div className="space-y-1">
             <h2 className="text-3xl font-black tracking-tighter uppercase">
@@ -618,6 +631,9 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
           </div>
 
           <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Quote type (required)
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -655,9 +671,14 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-black tracking-widest text-primary">
-                Event Name
+                Event Name <span className="text-destructive">*</span>
               </Label>
-              <div className="flex items-center gap-3 p-3 bg-background border-2 rounded-sm">
+              <div
+                className={cn(
+                  "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
+                  errors.eventName ? "border-destructive" : "border-border",
+                )}
+              >
                 <Calendar className="w-4 h-4 text-primary" />
                 <Input
                   {...register("eventName")}
@@ -665,12 +686,22 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                   className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
                 />
               </div>
+              {errors.eventName && (
+                <p className="text-xs text-destructive font-medium">
+                  {errors.eventName.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] uppercase font-black tracking-widest text-primary">
-                Venue Name & Info
+                Venue Name & Info <span className="text-destructive">*</span>
               </Label>
-              <div className="flex items-center gap-3 p-3 bg-background border-2 rounded-sm">
+              <div
+                className={cn(
+                  "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
+                  errors.venueName ? "border-destructive" : "border-border",
+                )}
+              >
                 <MapPin className="w-4 h-4 text-muted-foreground" />
                 <Input
                   {...register("venueName")}
@@ -678,6 +709,11 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
                   className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
                 />
               </div>
+              {errors.venueName && (
+                <p className="text-xs text-destructive font-medium">
+                  {errors.venueName.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -694,30 +730,71 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
               </div>
             ) : (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Contact <span className="text-destructive">*</span>
+                </p>
                 <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-center gap-3 p-3 bg-background border-2 rounded-sm">
-                    <User className="w-4 h-4 text-primary" />
-                    <Input
-                      {...register("clientName")}
-                      placeholder="Full Name"
-                      className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
-                    />
+                  <div className="space-y-1">
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
+                        errors.clientName ? "border-destructive" : "border-border",
+                      )}
+                    >
+                      <User className="w-4 h-4 text-primary" />
+                      <Input
+                        {...register("clientName")}
+                        placeholder="Full Name"
+                        className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
+                      />
+                    </div>
+                    {errors.clientName && (
+                      <p className="text-xs text-destructive font-medium">
+                        {errors.clientName.message}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-background border-2 rounded-sm">
-                    <Phone className="w-4 h-4 text-primary" />
-                    <Input
-                      {...register("clientPhone")}
-                      placeholder="Phone Number"
-                      className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
-                    />
+                  <div className="space-y-1">
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
+                        errors.clientPhone ? "border-destructive" : "border-border",
+                      )}
+                    >
+                      <Phone className="w-4 h-4 text-primary" />
+                      <Input
+                        {...register("clientPhone")}
+                        placeholder="Phone Number"
+                        className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
+                      />
+                    </div>
+                    {errors.clientPhone && (
+                      <p className="text-xs text-destructive font-medium">
+                        {errors.clientPhone.message}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-background border-2 rounded-sm">
-                    <Building2 className="w-4 h-4 text-primary" />
-                    <Input
-                      {...register("organization")}
-                      placeholder="Organization / Company"
-                      className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
-                    />
+                  <div className="space-y-1">
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 p-3 bg-background border-2 rounded-sm",
+                        errors.organization
+                          ? "border-destructive"
+                          : "border-border",
+                      )}
+                    >
+                      <Building2 className="w-4 h-4 text-primary" />
+                      <Input
+                        {...register("organization")}
+                        placeholder="Organization / Company"
+                        className="border-none p-0 focus-visible:ring-0 h-auto text-sm"
+                      />
+                    </div>
+                    {errors.organization && (
+                      <p className="text-xs text-destructive font-medium">
+                        {errors.organization.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -741,11 +818,21 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
               </Label>
             </div>
             {formData.hasAdditionalPOC && (
-              <Input
-                {...register("additionalPOC")}
-                placeholder="Name and Email of additional POC"
-                className="rounded-sm animate-in slide-in-from-top-2"
-              />
+              <div className="space-y-1">
+                <Input
+                  {...register("additionalPOC")}
+                  placeholder="Name and Email of additional POC"
+                  className={cn(
+                    "rounded-sm animate-in slide-in-from-top-2 border-2",
+                    errors.additionalPOC ? "border-destructive" : "border-border",
+                  )}
+                />
+                {errors.additionalPOC && (
+                  <p className="text-xs text-destructive font-medium">
+                    {errors.additionalPOC.message}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -854,7 +941,7 @@ export function StepFiveDetails({ onRedirect }: { onRedirect: () => void }) {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-primary">
-                Enter Your Email
+                Enter Your Email <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

@@ -137,6 +137,9 @@ export default function QuotePage() {
       eventName: "Untitled Event",
       isSpecQuote: false,
       venueName: "",
+      clientName: "",
+      clientPhone: "",
+      organization: "",
       hasAdditionalPOC: false,
       deliveryEmail: "",
       newsletterConsent: false,
@@ -339,6 +342,7 @@ export default function QuotePage() {
     const items: LineItem[] = result?.items ?? [];
     const shouldRedirect: boolean = result?.shouldRedirect ?? false;
     if (shouldRedirect) {
+      setSubmitStatus("idle");
       handleRedirect();
       return;
     }
@@ -346,6 +350,14 @@ export default function QuotePage() {
       (sum: number, item: LineItem) => sum + item.total,
       0,
     );
+
+    if (subtotal <= 0) {
+      setSubmitError(
+        "Your quote total is $0. Select at least one paid service or add-on before sending.",
+      );
+      setSubmitStatus("error");
+      return;
+    }
 
     try {
       const res = await fetch("/api/send-quote", {
