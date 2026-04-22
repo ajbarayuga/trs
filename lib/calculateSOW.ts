@@ -1,7 +1,7 @@
 import { QuoteFormData } from "@/schema/quote";
-import { RATES, DAY_RATE_MIN_HOURS, RUSH_FEE_RATE } from "@/lib/pricing";
+import { RATES, RUSH_FEE_RATE } from "@/lib/pricing";
 import { shouldRedirectToSales } from "@/lib/quoteRedirect";
-import { SERVICE_WINDOWS as SW, overheadHours } from "@/lib/constants";
+import { SERVICE_WINDOWS as SW } from "@/lib/constants";
 import { getHolidayRate, isRushBooking } from "@/lib/holidays";
 
 export interface LineItem {
@@ -23,16 +23,22 @@ export const calculateSOW = (data: QuoteFormData) => {
   // deselected (so re-selecting it restores the answers). calculateSOW must
   // only act on data whose parent is currently active.
 
-  const activeVideoTypes = data.services.includes("video")
-    ? (data.videoTypes ?? [])
-    : [];
+  const isVideoActive = data.services.includes("video");
+  const videoBuiltInActive = isVideoActive && (data.videoBuiltInEnabled ?? false);
+  const videoTRSActive = isVideoActive && (data.videoTRSEnabled ?? false);
+  const builtInEditing = videoBuiltInActive ? (data.videoBuiltInEditing ?? []) : [];
+  const trsEditing = videoTRSActive ? (data.videoTRSEditing ?? []) : [];
 
-  const activeShortsCount = data.wantsSocialShorts
-    ? (data.socialShortsCount ?? 0)
-    : 0;
+  const hasLecture = builtInEditing.includes("lecture") || trsEditing.includes("lecture");
+  const hasHighlight = trsEditing.includes("highlight");
+  const hasAnyVideo = videoBuiltInActive || videoTRSActive;
+
+  const activeShortsCount =
+    (builtInEditing.includes("social-short") ? (data.videoBuiltInSocialShortsCount ?? 0) : 0) +
+    (trsEditing.includes("social-short") ? (data.videoTRSSocialShortsCount ?? 0) : 0);
 
   const isStreamingActive = data.services.includes("streaming");
-  const isPAActive = data.audioServices.includes("pa");
+  const isPAActive = (data.audioServices ?? []).includes("pa");
 
   if (shouldRedirectToSales(data)) {
     return { items: [], shouldRedirect: true };
@@ -54,23 +60,10 @@ export const calculateSOW = (data: QuoteFormData) => {
     items.push({ name, description: desc, quantity: qty, unit, rate, total: round(qty * rate) });
   };
 
-  // ── Day-rate billing ──────────────────────────────────────────────────────
-  //
-  // The Production Lead is billed strictly hourly (actual hours).
-  // All other techs are on a day-rate baseline: the customer is charged for
-  // at least DAY_RATE_MIN_HOURS (10h) per booking regardless of time on site.
-  // Hours over 10 bill at the same hourly rate (overtime for everyone).
-  //
-  // Usage:  addItem("Streaming Tech", desc, techHrs(streamHrs), "hrs", rate)
-  const techHrs = (actual: number) => Math.max(DAY_RATE_MIN_HOURS, actual);
-
   // ── Labor subtotal tracking (for holiday + rush surcharges) ───────────────
   //
-  // We accumulate only labor totals so the holiday multiplier applies to labor
-  // only (not equipment or post-production), and rush fee applies to everything.
+  // Only labor totals are surcharged for holidays; rush fee applies to everything.
   let laborSubtotal = 0;
-  let productionLeadHourlySubtotal = 0;
-  let productionLeadHourlyHours = 0;
 
   const addLaborItem = (
     name: string,
@@ -84,17 +77,32 @@ export const calculateSOW = (data: QuoteFormData) => {
     laborSubtotal += total;
   };
 
-  const addProductionLeadItem = (desc: string, qtyHours: number) => {
-    const roundedHours = Math.max(1, Math.round(qtyHours));
-    addLaborItem(
-      "-- Production Lead (Hourly)",
-      desc,
-      roundedHours,
-      "hrs",
-      R.labor.productionLead,
-    );
-    productionLeadHourlySubtotal += round(roundedHours * R.labor.productionLead);
-    productionLeadHourlyHours += roundedHours;
+  // ── 3-tier Production Lead billing ───────────────────────────────────────
+  //
+  // < 8h total on site → hourly
+  // 8–10h             → flat day rate
+  // > 10h             → day rate + overtime per hour over 10
+  //
+  // totalHours = maxSetupMins/60 + eventDuration + maxStrikeMins/60
+  // across all active services for the booking.
+  const billProductionLead = (totalHours: number, desc: string) => {
+    const h = Math.max(0.5, totalHours);
+    if (h < 8) {
+      const hrs = Math.round(h * 2) / 2; // round to nearest 0.5h
+      addLaborItem("Production Lead", desc, hrs, "hrs", R.labor.productionLead);
+    } else if (h <= 10) {
+      addLaborItem("Production Lead", `${desc} — Day Rate`, 1, "day", R.labor.plDayRate);
+    } else {
+      const otHours = Math.round((h - 10) * 2) / 2;
+      const flatTotal = round(R.labor.plDayRate + otHours * R.labor.plOvertime);
+      addLaborItem(
+        "Production Lead",
+        `${desc} — Day Rate + ${otHours}h OT`,
+        1,
+        "flat",
+        flatTotal,
+      );
+    }
   };
 
   const eventDuration = data.hasDuration ? (data.durationHours ?? 4) : 4;
@@ -102,7 +110,7 @@ export const calculateSOW = (data: QuoteFormData) => {
   const hasBuiltInPJ = data.builtInAV?.includes("projector");
   const hasBuiltInTVs = data.builtInAV?.includes("tvs");
   const hasAnyCoreAVService =
-    isStreamingActive || isPAActive || activeVideoTypes.length > 0;
+    isStreamingActive || isPAActive || hasAnyVideo;
 
   // ── 1. VIDEO PRODUCTION ──────────────────────────────────────────────────
 
@@ -111,29 +119,15 @@ export const calculateSOW = (data: QuoteFormData) => {
       ? (data.studioDurationHours ?? 4)
       : 4;
 
-    const isStudioProduction = activeVideoTypes.some((v) =>
+    const studioVideoTypes = isVideoActive ? (data.videoTypes ?? []) : [];
+    const isStudioProduction = studioVideoTypes.some((v) =>
       ["podcast", "web-video"].includes(v),
     );
 
     if (isStudioProduction) {
       // 2.5h setup + 1.5h packup = 4h overhead, plus recording time
-      const studioHrs = 4 + studioDuration;
-      // PL is billed hourly (actual hours, no day-rate minimum)
-      addLaborItem(
-        "Production Lead (Studio)",
-        "Setup (2.5h) & Packup (1.5h)",
-        studioHrs,
-        "hrs",
-        R.labor.productionLead,
-      );
-      // Lighting tech is non-PL → day rate minimum
-      addLaborItem(
-        "Lighting Technician",
-        "Studio Lighting Kit Support",
-        techHrs(studioHrs),
-        "hrs",
-        R.labor.lightingTech,
-      );
+      const studioHrs = (SW.studio.setup + SW.studio.strike) / 60 + studioDuration;
+      billProductionLead(studioHrs, "Setup (2.5h) & Packup (1.5h)");
       addItem(
         "Studio Camera Kit",
         "2x Mirrorless Kit + Studio Lighting",
@@ -143,7 +137,7 @@ export const calculateSOW = (data: QuoteFormData) => {
       );
     }
 
-    if (activeVideoTypes.includes("podcast")) {
+    if (studioVideoTypes.includes("podcast")) {
       const episodes = Math.max(1, data.podcastEpisodes ?? 1);
       addItem(
         "Podcast Editing",
@@ -154,7 +148,7 @@ export const calculateSOW = (data: QuoteFormData) => {
       );
     }
 
-    if (activeVideoTypes.includes("web-video")) {
+    if (studioVideoTypes.includes("web-video")) {
       const videoQty = Math.max(1, data.webVideoCount ?? 1);
       const filmingUnits = Math.max(
         1,
@@ -178,82 +172,48 @@ export const calculateSOW = (data: QuoteFormData) => {
   }
 
   if (data.eventType === "live") {
-    if (activeVideoTypes.includes("highlight")) {
-      const isHalfDay = (data.highlightDurationHours ?? 0) < 4;
+    if (hasHighlight) {
+      const isHalfDay = eventDuration < 4;
       addItem(
         "Mirrorless Kit (Highlight)",
         isHalfDay ? "Half Day Rate" : "Full Day Rate",
         1,
         "day",
-        isHalfDay
-          ? R.equipment.mirrorlessHalfDay
-          : R.equipment.mirrorlessFullDay,
+        isHalfDay ? R.equipment.mirrorlessHalfDay : R.equipment.mirrorlessFullDay,
       );
-      // Highlight tech: setup + strike only (no show monitoring). Day rate minimum.
-      addLaborItem(
-        "Highlight Tech",
-        "30m Setup / 30m Packup",
-        techHrs(overheadHours(SW.highlight)),
-        "hrs",
-        R.labor.videoTech,
-      );
-      addItem(
-        "Event Highlight Edit",
-        "Creative highlight reel",
-        1,
-        "edit",
-        R.postProduction.highlightEdit,
-      );
+      addItem("Event Highlight Edit", "Creative highlight reel", 1, "edit", R.postProduction.highlightEdit);
     }
 
-    if (activeVideoTypes.includes("lecture")) {
+    if (hasLecture) {
       const talkCount = Math.max(1, data.lectureTalksCount ?? 1);
-      const editRate = data.lecturePPT
-        ? R.postProduction.lectureEditWithPPT
-        : R.postProduction.lectureEditNoPPT;
+      const dur = data.lectureTalkDuration ?? "up to 1hr";
+      const withPPT = data.lecturePPT ?? false;
+      const editRate =
+        dur === "up to 3hr"
+          ? withPPT ? R.postProduction.lectureEdit3hrWithPPT : R.postProduction.lectureEdit3hrNoPPT
+          : dur === "up to 2hr"
+          ? withPPT ? R.postProduction.lectureEdit2hrWithPPT : R.postProduction.lectureEdit2hrNoPPT
+          : withPPT ? R.postProduction.lectureEdit1hrWithPPT : R.postProduction.lectureEdit1hrNoPPT;
 
-      // overhead = SW.lecture.setup (90min) + SW.lecture.strike (45min) = 2.25h
-      const lectureHrs = overheadHours(SW.lecture) + eventDuration;
-      addItem(
-        "Camcorder & AV Kit",
-        "Lecture/Panel Essential Kit",
-        1,
-        "set",
-        R.equipment.camcorderKit,
-      );
+      // Built-in cameras = 1 angle (no kit); TRS cameras = N angles + kit
+      const builtInAngles = builtInEditing.includes("lecture") ? 1 : 0;
+      const trsAnglesCount = trsEditing.includes("lecture") ? Math.max(1, data.videoTRSCameraAngles ?? 1) : 0;
+      const totalAngles = Math.max(1, builtInAngles + trsAnglesCount);
 
-      // FIX T1-1: First person on a solo job is always a Production Lead (spec image 10)
-      // billed hourly. "Video Tech" was the wrong role and the wrong rate ($95 vs $117.99).
-      // PL is strictly hourly — no day-rate minimum.
-      addProductionLeadItem("1.5h Setup / 45m Packup", lectureHrs);
+      if (trsAnglesCount > 0) {
+        addItem("Camcorder & AV Kit", "Lecture/Panel Essential Kit", 1, "set", R.equipment.camcorderKit);
+        if (trsAnglesCount > 1) {
+          addItem("Additional Camera Kit", `${trsAnglesCount - 1} extra angle(s)`, trsAnglesCount - 1, "set", R.equipment.additionalCamKit);
+        }
+      }
+
       addItem(
         "Lecture Editing",
-        `${talkCount} talk(s)`,
-        talkCount,
-        "talk",
+        `${talkCount} talk(s) × ${totalAngles} angle(s) — ${dur}${withPPT ? " w/ PPT" : ""}`,
+        talkCount * totalAngles,
+        "recording",
         editRate,
       );
-
-      // Additional camera angles — only add camera kit and operator if NOT
-      // sharing with an active streaming setup (lectureFromStream flag)
-      if (data.additionalAngles && (data.angleCount ?? 0) > 0) {
-        const angles = Math.max(1, data.angleCount ?? 1);
-        addItem(
-          "Additional Camera Kit",
-          `${angles} extra angle(s)`,
-          angles,
-          "set",
-          R.equipment.additionalCamKit,
-        );
-        // Non-PL camera operators → day rate minimum
-        addLaborItem(
-          "Additional Cam Operator",
-          `${angles} op(s)`,
-          angles,
-          "person",
-          R.labor.cameraOperator * techHrs(lectureHrs),
-        );
-      }
     }
   }
 
@@ -263,17 +223,6 @@ export const calculateSOW = (data: QuoteFormData) => {
     const isBuiltIn = data.cameraSource === "built-in";
     const camCount = parseInt(data.cameraCount || "1") || 1;
 
-    // overhead = SW.streaming.setup (180min) + SW.streaming.strike (90min) = 4.5h
-    const streamHrs = overheadHours(SW.streaming) + eventDuration;
-
-    // Streaming tech is non-PL → day rate minimum
-    addLaborItem(
-      "Streaming Tech",
-      "3h Setup / 1.5h Strike",
-      techHrs(streamHrs),
-      "hrs",
-      R.labor.streamingTech,
-    );
     addItem(
       "Stream Control Kit",
       "Encoder & Switcher System",
@@ -292,57 +241,34 @@ export const calculateSOW = (data: QuoteFormData) => {
       );
     }
 
-    // FIX (manned vs. unmanned cameras):
-    // The spec states there is always at least 1 manned camera, but additional
-    // cameras can be unmanned — set up/torn down by the streaming tech, with no
-    // dedicated operator needed during the show. When hasUnmannedCameras is true
-    // and 2 cameras are selected, only 1 camera operator is billed.
-    const billedOperators =
-      camCount === 2 && data.hasUnmannedCameras ? 1 : camCount;
-
-    // Camera operator: overheadHours(SW.lecture) = 2.25h setup/strike per camera
-    // FIX T2-2: If lectureFromStream is true, lecture shares this camera setup —
-    // camera operator is already covering the lecture recording. No duplicate billing.
-    // Camera operators are non-PL → day rate minimum.
-    const camOpHrs = overheadHours(SW.lecture) + eventDuration;
-    const operatorDesc = data.lectureFromStream
-      ? `${billedOperators} op(s) @ 2.25h setup/strike (covers lecture recording)`
-      : `${billedOperators} op(s) @ 2.25h setup/strike`;
-    if (camCount > 1) {
-      addLaborItem(
-        "Camera Operator",
-        operatorDesc,
-        billedOperators,
-        "person",
-        R.labor.cameraOperator * techHrs(camOpHrs),
-      );
-    }
-
-    if (data.streamGraphics)
+    // Stream Link: optional (self-serve if DIY is selected)
+    if (!data.diyStream) {
       addItem(
-        "Stream Graphics Prep",
-        "Overlays & Branding",
-        1,
-        "flat",
-        R.streaming.streamGraphicsPrep,
-      );
-    if (!data.diyStream)
-      addItem(
-          "Zoom Setup",
-          "Destination platform setup and host config",
+        "Zoom Setup",
+        "Destination platform setup and host config",
         1,
         "flat",
         R.streaming.streamLinkSetup,
       );
+    }
 
-    addProductionLeadItem("Streaming production lead", eventDuration + 4.5);
+    // On-screen graphics prep: optional
+    if (data.streamGraphics) {
+      addItem(
+        "Stream Graphics Prep",
+        "On-screen overlays and branding",
+        1,
+        "flat",
+        R.streaming.streamGraphicsPrep,
+      );
+    }
   }
 
   // Required misc kit for onsite productions.
   // Use half-day variant only for short, video-only live recordings.
   if (data.eventType === "live" && hasAnyCoreAVService) {
     const isShortVideoOnlyJob =
-      activeVideoTypes.length > 0 &&
+      hasAnyVideo &&
       !isStreamingActive &&
       !isPAActive &&
       eventDuration <= 4;
@@ -368,19 +294,8 @@ export const calculateSOW = (data: QuoteFormData) => {
       R.postProduction.socialShortEdit,
     );
 
-    // FIX T3-2: Only skip the mirrorless kit if video production (not streaming)
-    // is already active. Streaming uses a camcorder — a mirrorless is still needed
-    // for Social Shorts filmed as new material.
-    const alreadyFilmingWithMirrorless = activeVideoTypes.length > 0;
-    if (data.shortsSource === "filming" && !alreadyFilmingWithMirrorless) {
-      addItem(
-        "Mirrorless Kit (Shorts Add-on)",
-        "Social filming camera kit",
-        1,
-        "day",
-        R.equipment.mirrorlessAddOn,
-      );
-    }
+    // Social shorts are sourced from the video production cameras (built-in or TRS).
+    // No additional mirrorless kit needed.
   }
 
   // ── 4. AUDIO SERVICES ────────────────────────────────────────────────────
@@ -419,35 +334,27 @@ export const calculateSOW = (data: QuoteFormData) => {
 
     // Mics — skipped if venue has built-in sound system
     if (!hasBuiltInAudio) {
-      const micItems: {
-        count: number | undefined;
-        name: string;
-        rate: number;
-      }[] = [
+      // 2026 kit model: kits replace per-unit billing
+      const micKits: { count: number | undefined; name: string; rate: number }[] = [
         {
-          count: data.micWirelessHandheld,
-          name: "Wireless Handheld Mic",
-          rate: R.mics.wirelessHandheld,
+          count: data.micWirelessComboKits,
+          name: "Wireless Combo Kit",
+          rate: R.mics.wirelessComboKit,
         },
         {
-          count: data.micWirelessLav,
-          name: "Wireless Lav Mic",
-          rate: R.mics.wirelessLav,
+          count: data.micWiredMicKits,
+          name: "Wired Mic Kit (SM58)",
+          rate: R.mics.wiredMicKit,
         },
         {
-          count: data.micWiredSM58,
-          name: "Wired SM58 Mic",
-          rate: R.mics.wiredSM58,
-        },
-        {
-          count: data.micWiredGooseneck,
-          name: "Wired Gooseneck Mic",
-          rate: R.mics.wiredGooseneck,
+          count: data.micGooseneckMics,
+          name: "Gooseneck Mic",
+          rate: R.mics.gooseneckMic,
         },
       ];
-      for (const { count, name, rate } of micItems) {
+      for (const { count, name, rate } of micKits) {
         if ((count ?? 0) > 0) {
-          addItem(name, `${count} unit(s)`, count ?? 1, "unit", rate);
+          addItem(name, `${count} kit(s)`, count ?? 1, "kit", rate);
         }
       }
       if (data.micRockBand) {
@@ -485,12 +392,6 @@ export const calculateSOW = (data: QuoteFormData) => {
       );
     }
 
-    if (!isStreamingActive && activeVideoTypes.length === 0) {
-      addProductionLeadItem(
-        "Event A/V production lead",
-        eventDuration + (isOutdoor ? 4.5 : 4),
-      );
-    }
   }
 
   // ── 5. MORE EVENT AV ─────────────────────────────────────────────────────
@@ -498,10 +399,13 @@ export const calculateSOW = (data: QuoteFormData) => {
   // Projector & Screen — skipped if venue has built-in projector
   if (data.wantsProjector && !hasBuiltInPJ) {
     const screenCount = data.projectorScreenCount ?? 1;
+    // "not-sure" falls back to 12ft — label it "TBD (est. 12ft)" so the quote is transparent
     const is16ft = data.projectorScreenSize === "16ft";
+    const isNotSure = data.projectorScreenSize === "not-sure" || !data.projectorScreenSize;
     const screenRate = is16ft
       ? R.equipment.projectorScreen16ft
       : R.equipment.projectorScreen12ft;
+    const screenLabel = is16ft ? "16ft" : isNotSure ? "12ft (TBD — confirm with PL)" : "12ft";
 
     addItem(
       "Projector",
@@ -512,40 +416,12 @@ export const calculateSOW = (data: QuoteFormData) => {
     );
     addItem(
       "Projection Screen",
-      `${data.projectorScreenSize ?? "12ft"}`,
+      screenLabel,
       screenCount,
       "unit",
       screenRate,
     );
 
-    // Screen barn-raise labor (2 techs simultaneously):
-    //   12ft: 2h up / 2h down = 4h per tech
-    //   16ft: 2.5h up / 2h down = 4.5h per tech  ← FIX: was "2.5h down" (overcalculated 30min)
-    //
-    // Formula: screenHrsEach = (w.setup - 60 + w.strike) / 60
-    //   Subtracts PJ setup (60min) from the serial setup window.
-    //   The strike window stores screen-barn-lower only (PJ strike billed separately below).
-    //   12ft: (180-60 + 120) / 60 = 4h   |   16ft: (210-60 + 120) / 60 = 4.5h  ✓
-    const w = is16ft ? SW.projector16ft : SW.projector12ft;
-    const screenHrsEach = (w.setup - 60 + w.strike) / 60;
-    // Screen techs are non-PL → day rate minimum
-    addLaborItem(
-      "Screen Setup & Strike (2 Techs)",
-      is16ft
-        ? "2 techs × 2.5h up / 2h down (simultaneous)"
-        : "2 techs × 2h up / 2h down (simultaneous)",
-      2,
-      "person",
-      R.labor.productionLead * techHrs(screenHrsEach),
-    );
-    // Projector setup: 1h after screen done + 30min strike = 1.5h flat
-    addLaborItem(
-      "Projector Setup & Strike",
-      "1h setup (after screen) / 30min strike",
-      1,
-      "flat",
-      R.labor.productionLead * techHrs(1.5),
-    );
     addItem(
       "Projector Accessory Kit",
       "Cables, mounts, accessories",
@@ -569,11 +445,14 @@ export const calculateSOW = (data: QuoteFormData) => {
   // Big Screen TVs — skipped if venue has built-in TVs
   if (data.wantsTVs && !hasBuiltInTVs) {
     const tvCount = data.tvCount ?? 1;
-    const tvRate =
-      data.tvSize === "85" ? R.equipment.tv85inch : R.equipment.tv75inch;
+    // "other" and unset fall back to 75" — label it visibly so PL can confirm
+    const tvIs85 = data.tvSize === "85";
+    const tvIsOther = data.tvSize === "other" || !data.tvSize;
+    const tvRate = tvIs85 ? R.equipment.tv85inch : R.equipment.tv75inch;
+    const tvLabel = tvIs85 ? `85"` : tvIsOther ? `75" (TBD — confirm with PL)` : `75"`;
 
     addItem(
-      `Big Screen TV (${data.tvSize ?? "85"}")`,
+      `Big Screen TV (${tvLabel})`,
       `${tvCount} unit(s)`,
       tvCount,
       "unit",
@@ -623,15 +502,6 @@ export const calculateSOW = (data: QuoteFormData) => {
       "set",
       R.equipment.stagingWashKit,
     );
-    // overhead = SW.stageWash.setup (120min) + SW.stageWash.strike (60min) = 3h
-    // Lighting tech is non-PL → day rate minimum
-    addLaborItem(
-      "Lighting Tech (Stage Wash)",
-      "2h setup / 1h strike",
-      1,
-      "flat",
-      R.labor.lightingTech * techHrs(overheadHours(SW.stageWash)),
-    );
   }
 
   if (lighting.includes("uplights-stage")) {
@@ -642,15 +512,6 @@ export const calculateSOW = (data: QuoteFormData) => {
       kits,
       "kit",
       R.equipment.stageUplightKit,
-    );
-    // overhead per kit = SW.stageUplightsPerKit = 30+15 = 45min = 0.75h
-    // Non-PL → day rate minimum (applied once across all kits, not per kit)
-    addLaborItem(
-      "Lighting Tech (Stage Uplights)",
-      `${kits} kit(s) × 30min setup / 15min strike`,
-      1,
-      "flat",
-      R.labor.lightingTech * techHrs(overheadHours(SW.stageUplightsPerKit) * kits),
     );
   }
 
@@ -663,14 +524,6 @@ export const calculateSOW = (data: QuoteFormData) => {
       "pack",
       R.equipment.wirelessUplightPack,
     );
-    // Non-PL → day rate minimum
-    addLaborItem(
-      "Lighting Tech (Wireless Uplights)",
-      `${packs} pack(s) × 30min setup / 15min strike`,
-      1,
-      "flat",
-      R.labor.lightingTech * techHrs(overheadHours(SW.wirelessUplightsPerPack) * packs),
-    );
     needsTrucking = true;
   }
 
@@ -681,15 +534,6 @@ export const calculateSOW = (data: QuoteFormData) => {
       1,
       "set",
       R.equipment.spotlight,
-    );
-    // overhead = SW.spotlight.setup (60min) + SW.spotlight.strike (30min) = 1.5h
-    // Non-PL → day rate minimum
-    addLaborItem(
-      "Lighting Tech (Spotlight)",
-      "1h setup / 30min strike",
-      1,
-      "flat",
-      R.labor.lightingTech * techHrs(overheadHours(SW.spotlight)),
     );
     needsTrucking = true;
   }
@@ -721,7 +565,48 @@ export const calculateSOW = (data: QuoteFormData) => {
       R.photography.portraits,
     );
 
-  // ── 6. TRUCKING ──────────────────────────────────────────────────────────
+  // ── 6. PRODUCTION LEAD ───────────────────────────────────────────────────
+  //
+  // Single PL billed once per booking using the 3-tier model.
+  // Total on-site hours = max setup window + event duration + max strike window
+  // across all active services.
+
+  if (data.eventType === "live" && hasAnyCoreAVService) {
+    let maxSetupMins = 0;
+    let maxStrikeMins = 0;
+
+    const trackWindow = (w: { setup: number; strike: number }) => {
+      maxSetupMins = Math.max(maxSetupMins, w.setup);
+      maxStrikeMins = Math.max(maxStrikeMins, w.strike);
+    };
+
+    if (isStreamingActive) trackWindow(SW.streaming);
+    if (isPAActive) trackWindow(data.setting === "outdoor" ? SW.paOutdoor : SW.paIndoor);
+    if (hasLecture) trackWindow(SW.lecture);
+    if (hasHighlight) trackWindow(SW.highlight);
+    if (data.wantsProjector && !hasBuiltInPJ) {
+      trackWindow(data.projectorScreenSize === "16ft" ? SW.projector16ft : SW.projector12ft);
+    }
+    if (data.wantsTVs && !hasBuiltInTVs) trackWindow(SW.tv);
+    if (data.wantsConfidenceMonitors) trackWindow(SW.confidenceMonitor);
+    if (lighting.includes("stage-wash")) trackWindow(SW.stageWash);
+    if (lighting.includes("spotlight")) trackWindow(SW.spotlight);
+    if (lighting.includes("uplights-stage")) {
+      const kits = Math.max(1, Math.ceil((data.stageWashWidth ?? 10) / 10));
+      trackWindow({ setup: SW.stageUplightsPerKit.setup * kits, strike: SW.stageUplightsPerKit.strike * kits });
+    }
+    if (lighting.includes("wireless-uplights")) {
+      const packs = Math.max(1, Math.floor((data.wirelessUplightCount ?? 6) / 6));
+      trackWindow({ setup: SW.wirelessUplightsPerPack.setup * packs, strike: SW.wirelessUplightsPerPack.strike * packs });
+    }
+
+    const fmtMins = (m: number) =>
+      m >= 60 ? `${m / 60}h` : `${m}min`;
+    const plHours = maxSetupMins / 60 + eventDuration + maxStrikeMins / 60;
+    billProductionLead(plHours, `${fmtMins(maxSetupMins)} setup / ${fmtMins(maxStrikeMins)} strike`);
+  }
+
+  // ── 7. TRUCKING ──────────────────────────────────────────────────────────
 
   if (needsTrucking) {
     addItem(
@@ -733,7 +618,7 @@ export const calculateSOW = (data: QuoteFormData) => {
     );
   }
 
-  // ── 7. HOLIDAY RATE SURCHARGE ────────────────────────────────────────────
+  // ── 8. HOLIDAY RATE SURCHARGE ────────────────────────────────────────────
   //
   // Applies only when a confirmed event date falls on a recognized holiday.
   // Only labor items are surcharged (equipment and post-production are not).
@@ -755,7 +640,7 @@ export const calculateSOW = (data: QuoteFormData) => {
     );
   }
 
-  // ── 8. RUSH FEE ──────────────────────────────────────────────────────────
+  // ── 9. RUSH FEE ──────────────────────────────────────────────────────────
   //
   // Applied when the event is fewer than 2 full business days away (per Terms §3).
   // Calculated as a % of the current subtotal (after holiday surcharge if any).
@@ -776,21 +661,20 @@ export const calculateSOW = (data: QuoteFormData) => {
     );
   }
 
-  // Emory-style PL discount lane from the new pricing templates:
-  // - 10% off production lead hourly rows
-  // - generally applied to partnered/annual clients or large yearly accounts
+  // ── 10. DISCOUNT ─────────────────────────────────────────────────────────
+  // 10% off labor for Emory or large-order qualifying clients.
+
   const org = (data.organization ?? "").toLowerCase();
   const qualifiesForPlDiscount =
-    productionLeadHourlySubtotal > 0 &&
+    laborSubtotal > 0 &&
     (org.includes("emory") || items.reduce((s, i) => s + i.total, 0) >= 10_000);
   if (qualifiesForPlDiscount) {
-    const discountRatePerHour = Math.round(R.labor.productionLead * 0.1 * 1000) / 1000;
     addItem(
       "DISCOUNT",
-      "Discount - Production Lead (10% off hourly rate) for qualifying clients",
+      "Discount - Production Lead (10% off labor) for qualifying clients",
       1,
       "flat",
-      round(-productionLeadHourlyHours * discountRatePerHour),
+      round(-laborSubtotal * 0.1),
     );
   }
 

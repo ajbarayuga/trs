@@ -24,27 +24,23 @@ export const CURRENCY = {
 
 // ─── Labor billing rules ──────────────────────────────────────────────────────
 //
-// Per work plan spec:
-//   The Production Lead is the only crew member billed strictly hourly.
-//   All other techs (streaming, camera, lighting, etc.) are on a day-rate
-//   baseline of 10 hours — meaning the customer is charged for at least
-//   10 hours regardless of actual time on site. Hours beyond 10 are billed
-//   at the standard hourly rate (overtime applies to everyone).
+// 2026 spec: single Production Lead per booking, 3-tier billing:
+//   < 8 hrs total on site  → hourly × hours
+//   8–10 hrs total on site → flat day rate
+//   > 10 hrs total on site → day rate + overtime × (hours - 10)
 //
-// calculateSOW.ts uses techHrs() to enforce this minimum for non-PL labor.
-export const DAY_RATE_MIN_HOURS = 10;
+// "Total on site" = maxSetupMins/60 + eventDuration + maxStrikeMins/60
+// where max is taken across all active services for that booking.
 
 // ─── Surcharge rates ──────────────────────────────────────────────────────────
 export const RUSH_FEE_RATE = 0.20; // 20% of quoted total (Terms §3)
 
 export const RATES = {
-  // ── Labor (per hour) ──────────────────────────────────────────────────────
+  // ── Labor ─────────────────────────────────────────────────────────────────
   labor: {
-    productionLead: 121.5297, // 2026 Emory: Production Lead hourly
-    lightingTech: 69.525, // Lighting Tech day rate 695.25 / 10h baseline
-    videoTech: 69.525, // Video Tech aligns with standard AV tech lane
-    streamingTech: 84.975, // Stream Tech day rate 849.75 / 10h baseline
-    cameraOperator: 76.735, // Camera Operator day rate 767.35 / 10h baseline
+    productionLead: 121.5297, // 2026: PL hourly rate (< 8h tier)
+    plDayRate: 995.0,         // 2026: PL day rate flat (8–10h tier)
+    plOvertime: 180.25,       // 2026: PL overtime per hour over 10h
   },
 
   // ── Equipment (flat / per-unit rates) ────────────────────────────────────
@@ -78,26 +74,31 @@ export const RATES = {
     avEssentialKitHalfDay: 61.8, // Half-day misc kit (<=4h specific workflows)
   },
 
-  // ── Microphones (per unit per event) ─────────────────────────────────────
+  // ── Microphones (per kit per event) ──────────────────────────────────────
   mics: {
-    wirelessHandheld: 128.75,
-    wirelessLav: 128.75,
-    wiredSM58: 36.05,
-    wiredGooseneck: 77.25,
-    vogWireless: 128.75, // VOG wireless handheld
-    vogWired: 36.05, // VOG wired mic
-    rockBandLocker: 399.0, // Live Event Mic Locker
+    // 2026 kit model: kits replace per-unit billing
+    wirelessComboKit: 128.75, // Wireless Handheld/Lav Combo Kit (1 receiver, 1 handheld, 1 lav)
+    wiredMicKit: 36.05,       // Wired Mic Kit (SM58)
+    gooseneckMic: 36.05,      // Gooseneck (lectern) mic
+    vogWireless: 128.75,      // VOG wireless handheld
+    vogWired: 36.05,           // VOG wired mic
+    rockBandLocker: 399.0,    // Live Event Mic Locker
   },
 
   // ── Post-Production (per unit) ────────────────────────────────────────────
   postProduction: {
-    podcastEdit: 360.0, // Podcast - up to 1 hour
-    webVideoEdit: 225.0, // Per video
-    webVideoFilming: 62.5, // Per 30-min filming slot
-    lectureEditNoPPT: 231.75, // Lecture/Event <=1h no PPT
-    lectureEditWithPPT: 324.45, // Lecture/Event <=1h with PPT
-    highlightEdit: 921.85, // Event highlight video package
-    socialShortEdit: 125.0, // Per short
+    podcastEdit: 360.0,          // Podcast - up to 1 hour
+    webVideoEdit: 225.0,         // Per video
+    webVideoFilming: 62.5,       // Per 30-min filming slot
+    // Lecture editing — duration-based, billed per camera angle
+    lectureEdit1hrNoPPT: 231.75,   // ≤ 1hr, no PPT
+    lectureEdit1hrWithPPT: 324.45, // ≤ 1hr, with PPT
+    lectureEdit2hrNoPPT: 417.15,   // ≤ 2hr, no PPT
+    lectureEdit2hrWithPPT: 509.85, // ≤ 2hr, with PPT
+    lectureEdit3hrNoPPT: 509.85,   // ≤ 3hr, no PPT
+    lectureEdit3hrWithPPT: 695.25, // ≤ 3hr, with PPT
+    highlightEdit: 921.85,       // Event highlight video package // TODO: confirm rate from client
+    socialShortEdit: 135.0,      // Per social short (~1 min)
   },
 
   // ── Photography (flat per event) ─────────────────────────────────────────

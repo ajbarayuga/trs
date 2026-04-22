@@ -31,26 +31,20 @@ import { cn } from "@/lib/utils";
 
 const MIC_TYPES = [
   {
-    key: "micWirelessHandheld",
-    label: "Wireless Handheld",
-    desc: "Standard wireless presenter mic",
+    key: "micWirelessComboKits",
+    label: "Wireless Combo Kit",
+    desc: "1 receiver · 1 handheld · 1 lav — choose how you want to use it at the event",
     img: "/mics/wireless-handheld.avif",
   },
   {
-    key: "micWirelessLav",
-    label: "Wireless Lav",
-    desc: "Discreet clip-on lapel mic",
-    img: "/mics/wireless-lav.avif",
-  },
-  {
-    key: "micWiredSM58",
-    label: "Wired SM58",
-    desc: "Industry-standard vocal mic",
+    key: "micWiredMicKits",
+    label: "Wired Mic Kit (SM58)",
+    desc: "Industry-standard wired vocal mic",
     img: "/mics/wired-sm58.avif",
   },
   {
-    key: "micWiredGooseneck",
-    label: "Wired Gooseneck",
+    key: "micGooseneckMics",
+    label: "Gooseneck Mic",
     desc: "Podium / lectern mic",
     img: "/mics/wired-gooseneck.avif",
   },
@@ -82,32 +76,12 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
 
   return (
     <div className="space-y-12 animate-in fade-in duration-500 pb-10">
-      {/* ══ AUDIO SERVICES ══════════════════════════════════════════════════ */}
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-xl font-black tracking-tight uppercase">
-            Audio-Visual
-          </h3>
-          <p
-            className={cn(
-              "text-[10px] uppercase tracking-widest mt-1",
-              mainServiceMissing
-                ? "text-destructive font-bold leading-snug"
-                : "text-muted-foreground",
-            )}
-          >
-            {mainServiceMissing
-              ? "Turn on Public Address below and/or pick Live Streaming or Video on the previous step."
-              : "Select all that apply"}
-          </p>
-        </div>
-
-        {/* Service type selection */}
-        <div className="space-y-3">
+      {/* ══ SERVICES CONTINUED: PUBLIC ADDRESS + MORE EVENT AV ═════════════ */}
+      <div className="space-y-3">
           {/* Public Address */}
           <Card
             className={cn(
-              "cursor-pointer rounded-sm border-2 transition-all",
+              "cursor-pointer rounded-sm border-2 transition-all py-0 gap-0",
               audioServices.includes("pa")
                 ? "border-primary bg-primary/5"
                 : mainServiceMissing
@@ -116,10 +90,10 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
             )}
             onClick={() => toggleArray("audioServices", "pa")}
           >
-            <CardContent className="flex items-center gap-4 p-5">
+            <CardContent className="flex items-center gap-4 p-6 min-h-24">
               <Volume2
                 className={cn(
-                  "w-5 h-5 shrink-0",
+                  "w-6 h-6 shrink-0",
                   audioServices.includes("pa")
                     ? "text-primary"
                     : mainServiceMissing
@@ -128,7 +102,7 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
                 )}
               />
               <div className="flex-1">
-                <div className="font-bold">Public Address</div>
+                <div className="font-bold text-lg">Public Address</div>
                 <p className="text-xs text-muted-foreground">
                   Speakers, mics, and PA system for your event
                 </p>
@@ -141,6 +115,37 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Quote Gen Map placeholders (disabled while logic is revised).
+              Hide while Public Address is active so selected-tab content
+              appears directly under the selected option. */}
+          {!audioServices.includes("pa") && (
+            <>
+              <Card className="rounded-sm border-2 border-dashed border-border opacity-55 cursor-not-allowed py-0 gap-0">
+                <CardContent className="flex items-center gap-4 p-6 min-h-24">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-muted-foreground" />
+                  <div className="flex-1">
+                    <div className="font-bold text-lg">Video Editing Only</div>
+                    <p className="text-xs text-muted-foreground">
+                      Temporarily disabled while pricing and logic are being revised
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-sm border-2 border-dashed border-border opacity-55 cursor-not-allowed py-0 gap-0">
+                <CardContent className="flex items-center gap-4 p-6 min-h-24">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-muted-foreground" />
+                  <div className="flex-1">
+                    <div className="font-bold text-lg">More Event AV</div>
+                    <p className="text-xs text-muted-foreground">
+                      Temporarily disabled while pricing and logic are being revised
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           {/* PA sub-questions */}
           {audioServices.includes("pa") && (
@@ -462,42 +467,11 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
             </div>
           )}
 
-          {/* Music / Bands → call sales */}
-          <Card
-            className="border-2 rounded-sm border-dashed cursor-pointer opacity-70 hover:opacity-100"
-            onClick={onRedirect}
-          >
-            <CardContent className="flex items-center gap-4 p-5">
-              <Music className="w-5 h-5" />
-              <div className="flex-1">
-                <div className="font-bold text-sm">Music / Bands</div>
-                <p className="text-xs text-muted-foreground">
-                  Call Sales — band mic locker and stage setup
-                </p>
-              </div>
-              <AlertCircle className="w-4 h-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-
-          {/* Audio Recording → call sales */}
-          <Card
-            className="border-2 border-dashed rounded-sm cursor-pointer opacity-70 hover:opacity-100"
-            onClick={onRedirect}
-          >
-            <CardContent className="flex items-center gap-4 p-5">
-              <Mic className="w-5 h-5" />
-              <div className="flex-1">
-                <div className="font-bold text-sm">Recording (Audio Only)</div>
-                <p className="text-xs text-muted-foreground">Call Sales</p>
-              </div>
-              <AlertCircle className="w-4 h-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
-      {/* ══ MORE EVENT AV ════════════════════════════════════════════════════ */}
-      <div className="space-y-6">
+      {/* More Event AV section is intentionally hidden for now.
+          Kept nested under this option while logic/pricing is revised. */}
+      <div className="hidden space-y-6">
         <div>
           <h3 className="text-xl font-black tracking-tight uppercase">
             More Event AV

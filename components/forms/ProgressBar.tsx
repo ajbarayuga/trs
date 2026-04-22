@@ -7,10 +7,8 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   { id: 1, name: "START" },
   { id: 2, name: "SERVICES" },
-  { id: 3, name: "VIDEO" },
-  { id: 4, name: "AUDIO-VISUAL" }, // was "AUDIO & AV"
-  { id: 5, name: "DETAILS" },
-  { id: 6, name: "SEND" },
+  { id: 3, name: "DETAILS" },
+  { id: 4, name: "SEND" },
 ];
 
 interface ProgressBarProps {

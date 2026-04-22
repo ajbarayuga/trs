@@ -8,7 +8,8 @@ function activeVideoTypes(data: QuoteFormData): string[] {
 export function shouldRedirectToSales(data: QuoteFormData): boolean {
   const videoTypes = activeVideoTypes(data);
   const isStreamingActive = data.services.includes("streaming");
-  const isPAActive = data.audioServices.includes("pa");
+  const audio = data.audioServices ?? [];
+  const isPAActive = audio.includes("pa");
 
   return (
     data.eventType === "other" ||
@@ -26,8 +27,8 @@ export function shouldRedirectToSales(data: QuoteFormData): boolean {
         data.cameraCount === "not sure (call sales)")) ||
     (videoTypes.includes("lecture") &&
       data.lectureTalkDuration === "longer (call sales)") ||
-    data.audioServices.includes("band") ||
-    data.audioServices.includes("recording") ||
+    audio.includes("band") ||
+    audio.includes("recording") ||
     (isPAActive && (data.attendance ?? 0) > QUOTE_LIMITS.maxAttendance)
   );
 }

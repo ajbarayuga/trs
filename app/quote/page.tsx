@@ -9,7 +9,7 @@ import { shouldRedirectToSales } from "@/lib/quoteRedirect";
 import { DEFAULT_DOORS_TIME, DEFAULT_START_TIME } from "@/lib/quoteDefaults";
 import { ProgressBar } from "@/components/forms/ProgressBar";
 import NotSure from "@/components/forms/NotSure";
-import { StepTwo } from "@/components/forms/StepTwo";
+import { StepTwo, VenueEquipmentCheck } from "@/components/forms/StepTwo";
 import { StepThree } from "@/components/forms/StepThree";
 import { StepFourAV } from "@/components/forms/StepFourAV";
 import { StepFiveDetails } from "@/components/forms/StepFourSummary";
@@ -36,11 +36,9 @@ import {
 
 // ─── Step map ──────────────────────────────────────────────────────────────────
 //  1 = Start
-//  2 = Services       ← was "Time & Place"; now just Event Type + Venue AV Check
-//  3 = Video Services
-//  4 = Audio-Visual
-//  5 = Details        ← now contains Time & Place + It's All About You + quote
-//  6 = Success
+//  2 = Services  ← Event Type + ALL service selection (streaming, video, AV, lighting, photo)
+//  3 = Details   ← Time & Place + It's All About You + quote preview
+//  4 = Send      ← Success / confirmation
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface QuoteSnapshot {
@@ -105,6 +103,15 @@ export default function QuotePage() {
       streamGraphics: false,
       diyStream: false,
       videoTypes: [],
+      videoBuiltInEnabled: false,
+      videoBuiltInEditing: [],
+      videoBuiltInRawFootage: false,
+      videoBuiltInSocialShortsCount: 0,
+      videoTRSEnabled: false,
+      videoTRSCameraAngles: 1,
+      videoTRSEditing: [],
+      videoTRSRawFootage: false,
+      videoTRSSocialShortsCount: 0,
       webVideoPeople: 1,
       webVideoCount: 1,
       webVideoDuration: 3,
@@ -122,10 +129,9 @@ export default function QuotePage() {
       socialShortsCount: 0,
       shortsSource: "recut",
       audioServices: [],
-      micWirelessHandheld: 0,
-      micWirelessLav: 0,
-      micWiredSM58: 0,
-      micWiredGooseneck: 0,
+      micWirelessComboKits: 0,
+      micWiredMicKits: 0,
+      micGooseneckMics: 0,
       micRockBand: false,
       micNotSure: false,
       playbackEnabled: false,
@@ -157,8 +163,9 @@ export default function QuotePage() {
     },
   });
 
-  const { watch, handleSubmit, reset } = methods;
+  const { watch, handleSubmit, reset, getValues } = methods;
   const formData = watch();
+  const lastAutoSaveFingerprintRef = useRef<string | null>(null);
 
   // ── Mount guard — prevents SSR hydration flash ───────────────────────────
   useEffect(() => {
@@ -174,7 +181,7 @@ export default function QuotePage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === "object" && parsed.values) {
-          const safeStep = !parsed.step || parsed.step >= 6 ? 1 : parsed.step;
+          const safeStep = !parsed.step || parsed.step >= 4 ? 1 : parsed.step;
           reset(parsed.values);
           setCurrentStep(safeStep);
           setMaxVisitedStep(safeStep);
@@ -194,23 +201,23 @@ export default function QuotePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-save steps 2–5 only
+  // Auto-save steps 2–3 only (fingerprinted so we do not setState on identical form snapshots)
   useEffect(() => {
-    if (path !== "quote" || currentStep < 2 || currentStep >= 6) return;
+    if (path !== "quote" || currentStep < 2 || currentStep >= 4) return;
     try {
+      const values = getValues();
+      const fingerprint = JSON.stringify({ step: currentStep, values });
+      if (lastAutoSaveFingerprintRef.current === fingerprint) return;
+      lastAutoSaveFingerprintRef.current = fingerprint;
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({
-          step: currentStep,
-          values: methods.getValues(),
-          savedAt: Date.now(),
-        }),
+        JSON.stringify({ step: currentStep, values, savedAt: Date.now() }),
       );
-      setHasSavedProgress(true);
+      setHasSavedProgress((prev) => (prev ? prev : true));
     } catch {
       /* ignore */
     }
-  }, [formData, currentStep, path, methods]);
+  }, [formData, currentStep, path, getValues]);
 
   // ── Redirect modal ───────────────────────────────────────────────────────
   const [showRedirectModal, setShowRedirectModal] = useState(false);
@@ -304,21 +311,12 @@ export default function QuotePage() {
     prevShouldRedirect.current = true;
   }, [shouldRedirect, path, showRedirectModal, handleRedirectRequest]);
 
-  // ── Step labels (updated to match new step 2 content) ───────────────────
   const stepLabel = (step: number) => {
     switch (step) {
-      case 1:
-        return "Get Started";
-      case 2:
-        return "Services"; // was "Time & Place"
-      case 3:
-        return "Video Services";
-      case 4:
-        return "Audio-Visual";
-      case 5:
-        return "Details"; // now includes Time & Place + contact
-      default:
-        return "";
+      case 1: return "Get Started";
+      case 2: return "Services";
+      case 3: return "Details";
+      default: return "";
     }
   };
 
@@ -371,7 +369,7 @@ export default function QuotePage() {
         refNumber: generateRefNumber(),
       });
       setSubmitStatus("idle");
-      goToStep(6);
+      goToStep(4);
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Something went wrong.",
@@ -399,7 +397,7 @@ export default function QuotePage() {
           {path === "quote" && (
             <ProgressBar
               currentStep={currentStep}
-              isFinished={currentStep === 6}
+              isFinished={currentStep === 4}
               maxVisitedStep={maxVisitedStep}
               onStepClick={goToStep}
             />
@@ -438,7 +436,7 @@ export default function QuotePage() {
             {path === "quote" && (
               <FormProvider {...methods}>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
-                  {currentStep < 6 && (
+                  {currentStep < 4 && (
                     <div className="flex justify-between items-end animate-in fade-in">
                       <div className="space-y-1">
                         <p className="text-[14px] font-black uppercase text-blue-900">
@@ -461,33 +459,8 @@ export default function QuotePage() {
 
                   {/* Step 1 — Start */}
                   {currentStep === 1 && (
-                    <Card className="p-12 text-center border-dashed border-2 bg-muted/5 rounded-sm animate-in zoom-in-95 duration-500 space-y-8">
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border/50 mx-auto">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                          Takes about 3 minutes
-                        </span>
-                      </div>
-                      <p className="text-xl text-muted-foreground font-medium">
-                        Ready to configure your production?
-                      </p>
-                      <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto text-left">
-                        {[
-                          { icon: "⚡", label: "Instant estimate" },
-                          { icon: "📄", label: "PDF emailed to you" },
-                          { icon: "🔒", label: "No account needed" },
-                        ].map(({ icon, label }) => (
-                          <div
-                            key={label}
-                            className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-background border border-border/50"
-                          >
-                            <span className="text-lg">{icon}</span>
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-center text-muted-foreground leading-tight">
-                              {label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                    <Card className="p-12 border-dashed border-2 bg-muted/5 rounded-sm animate-in zoom-in-95 duration-500 space-y-8">
+                      <VenueEquipmentCheck />
                       <div className="flex justify-center">
                         <CtaButton type="button" onClick={() => goToStep(2)}>
                           Begin <ArrowRight className="w-5 h-5" />
@@ -496,10 +469,12 @@ export default function QuotePage() {
                     </Card>
                   )}
 
-                  {/* Step 2 — Services (Event Type + Venue AV Check) */}
+                  {/* Step 2 — Services (Event Type + Streaming + Video + AV + Lighting + Photo) */}
                   {currentStep === 2 && (
                     <div className="animate-in fade-in duration-700">
                       <StepTwo />
+                      <StepThree onRedirect={handleRedirectRequest} />
+                      <StepFourAV onRedirect={handleRedirectRequest} />
                       <div className="flex justify-between mt-0 pt-8">
                         <Button
                           variant="ghost"
@@ -514,62 +489,14 @@ export default function QuotePage() {
                           onClick={() => goToStep(3)}
                           className="px-12 h-12 font-bold bg-blue-900 border-blue-900 rounded-sm uppercase"
                         >
-                          Next: Video Services
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 3 — Video Services */}
-                  {currentStep === 3 && (
-                    <div className="animate-in fade-in duration-700">
-                      <StepThree onRedirect={handleRedirectRequest} />
-                      <div className="flex justify-between mt-0 pt-8">
-                        <Button
-                          variant="ghost"
-                          type="button"
-                          onClick={() => goToStep(2)}
-                          className="font-bold text-muted-foreground"
-                        >
-                          Back
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => goToStep(4)}
-                          className="px-12 h-12 font-bold bg-blue-900 border-blue-900 rounded-sm uppercase"
-                        >
-                          Next: Audio-Visual
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 4 — Audio-Visual */}
-                  {currentStep === 4 && (
-                    <div className="animate-in fade-in duration-700">
-                      <StepFourAV onRedirect={handleRedirectRequest} />
-                      <div className="flex justify-between mt-0 pt-8">
-                        <Button
-                          variant="ghost"
-                          type="button"
-                          onClick={() => goToStep(3)}
-                          className="font-bold text-muted-foreground"
-                        >
-                          Back
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => goToStep(5)}
-                          className="px-12 h-12 font-bold bg-blue-900 border-blue-900 rounded-sm uppercase"
-                        >
                           Next: Details
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* Step 5 — Details (Time & Place + Contact + Quote) */}
-                  {currentStep === 5 && (
+                  {/* Step 3 — Details (Time & Place + Contact + Quote) */}
+                  {currentStep === 3 && (
                     <div className="animate-in fade-in duration-700">
                       <StepFiveDetails onRedirect={handleRedirectRequest} />
 
@@ -587,11 +514,11 @@ export default function QuotePage() {
                         <Button
                           variant="ghost"
                           type="button"
-                          onClick={() => goToStep(4)}
+                          onClick={() => goToStep(2)}
                           className="font-bold text-muted-foreground"
                           disabled={submitStatus === "loading"}
                         >
-                          Back to Audio-Visual
+                          Back
                         </Button>
                         <Button
                           type="submit"
@@ -614,8 +541,8 @@ export default function QuotePage() {
                     </div>
                   )}
 
-                  {/* Step 6 — Success */}
-                  {currentStep === 6 && snapshot && (
+                  {/* Step 4 — Send / Success */}
+                  {currentStep === 4 && snapshot && (
                     <div className="animate-in zoom-in-95 duration-500">
                       <StepFiveSuccess
                         onReset={handleRedirect}

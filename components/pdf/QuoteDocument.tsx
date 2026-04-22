@@ -1143,22 +1143,19 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
             />
             {!data.builtInAV?.includes("audio") && (
               <>
-                {(data.micWirelessHandheld ?? 0) > 0 && (
+                {(data.micWirelessComboKits ?? 0) > 0 && (
                   <SubBulletRow
-                    text={`Wireless Handheld Mic x${data.micWirelessHandheld}`}
+                    text={`Wireless Combo Kit x${data.micWirelessComboKits}`}
                   />
                 )}
-                {(data.micWirelessLav ?? 0) > 0 && (
+                {(data.micWiredMicKits ?? 0) > 0 && (
                   <SubBulletRow
-                    text={`Wireless Lav Mic x${data.micWirelessLav}`}
+                    text={`Wired Mic Kit (SM58) x${data.micWiredMicKits}`}
                   />
                 )}
-                {(data.micWiredSM58 ?? 0) > 0 && (
-                  <SubBulletRow text={`Wired SM58 x${data.micWiredSM58}`} />
-                )}
-                {(data.micWiredGooseneck ?? 0) > 0 && (
+                {(data.micGooseneckMics ?? 0) > 0 && (
                   <SubBulletRow
-                    text={`Wired Gooseneck x${data.micWiredGooseneck}`}
+                    text={`Gooseneck Mic x${data.micGooseneckMics}`}
                   />
                 )}
                 {data.micNotSure && (

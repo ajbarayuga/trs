@@ -16,8 +16,6 @@ import {
   Camera,
   Layout,
   Settings,
-  Mic2,
-  Film,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,11 +33,10 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
   const { errors } = formState;
   const formData = watch();
   const services = formData.services ?? [];
-  const videoTypes = formData.videoTypes ?? [];
   const mainServiceMissing = Boolean(errors.services);
 
   const toggleArray = useCallback(
-    (field: "services" | "videoTypes", value: string) => {
+    (field: "services" | "videoTypes" | "videoBuiltInEditing" | "videoTRSEditing", value: string) => {
       const current = (getValues(field) as string[]) ?? [];
       const updated = current.includes(value)
         ? current.filter((v) => v !== value)
@@ -76,7 +73,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
         <div className="space-y-4">
           <Card
             className={cn(
-              "cursor-pointer rounded-sm border-2 transition-all",
+              "cursor-pointer rounded-sm border-2 transition-all py-0 gap-0",
               services.includes("streaming")
                 ? "border-primary bg-primary/5"
                 : mainServiceMissing
@@ -113,7 +110,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
 
           {services.includes("streaming") && (
             <div className="p-6 border-2 border-primary/20 rounded-sm bg-background space-y-8 animate-in slide-in-from-top-4">
-              {/* Zoom-only shortcut */}
+              {/* Built-in AV shortcut */}
               <div className="flex items-center space-x-3 p-4 bg-primary/5 rounded-sm border border-primary/10">
                 <Checkbox
                   id="zoom"
@@ -121,8 +118,8 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                   onCheckedChange={(c) => setValue("isZoomOnly", !!c)}
                 />
                 <Label htmlFor="zoom" className="text-sm font-medium">
-                  Using all built-in AV to stream to Zoom only? (Skips questions
-                  below)
+                  Does the venue have built-in AV for Zoom streaming, and would
+                  you like to use it? (If yes, you can skip the questions below.)
                 </Label>
               </div>
 
@@ -131,8 +128,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                   {/* Camera count */}
                   <div className="space-y-4">
                     <Label className="flex items-center gap-2 font-bold">
-                      <Camera className="w-4 h-4 text-primary" /> How many
-                      cameras?
+                      <Camera className="w-4 h-4 text-primary" /> How many cameras?
                     </Label>
                     <RadioGroup
                       value={formData.cameraCount}
@@ -162,7 +158,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                     </RadioGroup>
                   </div>
 
-                  {/* Manned vs. unmanned camera — only relevant when 2 cameras selected */}
+                  {/* Manned vs. unmanned — only relevant when 2 cameras selected */}
                   {formData.cameraCount === "2" && (
                     <div className="space-y-3 p-4 bg-muted/30 rounded-2xl border">
                       <Label className="flex items-center gap-2 font-bold text-sm">
@@ -182,12 +178,8 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                             className={`w-4 h-4 rounded-full border-2 shrink-0 ${!formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
                           />
                           <div>
-                            <p className="text-sm font-medium">
-                              Yes, both are manned
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              2 camera operators billed
-                            </p>
+                            <p className="text-sm font-medium">Yes, both are manned</p>
+                            <p className="text-xs text-muted-foreground">2 camera operators billed</p>
                           </div>
                         </div>
                         <div
@@ -198,19 +190,15 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                             className={`w-4 h-4 rounded-full border-2 shrink-0 ${formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
                           />
                           <div>
-                            <p className="text-sm font-medium">
-                              1 camera is unmanned
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              1 operator billed (saves cost)
-                            </p>
+                            <p className="text-sm font-medium">1 camera is unmanned</p>
+                            <p className="text-xs text-muted-foreground">1 operator billed (saves cost)</p>
                           </div>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Built-in camera source */}
+                  {/* Built-in camera source — shown when venue has built-in cameras */}
                   {formData.builtInAV?.includes("cameras") && (
                     <div className="space-y-4 p-4 border-2 border-orange-200 bg-orange-50/30 rounded-2xl">
                       <Label className="font-bold text-orange-700">
@@ -223,9 +211,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                         <div className="flex flex-col md:flex-row gap-4">
                           <div className="flex items-center space-x-2 bg-background p-3 rounded-sm border">
                             <RadioGroupItem value="built-in" id="b1" />
-                            <Label htmlFor="b1">
-                              Use built-in (No cam kits needed)
-                            </Label>
+                            <Label htmlFor="b1">Use built-in (No cam kits needed)</Label>
                           </div>
                           <div className="flex items-center space-x-2 bg-background p-3 rounded-sm border">
                             <RadioGroupItem value="bring" id="b2" />
@@ -235,32 +221,39 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                       </RadioGroup>
                     </div>
                   )}
-
-                  {/* Graphics & DIY */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-3 p-4 bg-background border rounded-sm">
-                      <Checkbox
-                        id="gr"
-                        checked={formData.streamGraphics ?? false}
-                        onCheckedChange={(c) => setValue("streamGraphics", !!c)}
-                      />
-                      <Label htmlFor="gr" className="text-sm font-medium">
-                        On-screen graphics? (Adds prep)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-3 p-4 bg-background border rounded-sm">
-                      <Checkbox
-                        id="diy"
-                        checked={formData.diyStream ?? false}
-                        onCheckedChange={(c) => setValue("diyStream", !!c)}
-                      />
-                      <Label htmlFor="diy" className="text-sm font-medium">
-                        DIY your stream link? (Saves setup fee)
-                      </Label>
-                    </div>
-                  </div>
                 </div>
               )}
+
+              {/* Client doc: TRS-provided streaming options */}
+              <div className="space-y-4 pt-2 border-t border-border/50">
+                <Label className="font-bold text-sm">
+                  I want The Recording Service to provide:
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3 p-4 bg-background border rounded-sm">
+                    <Checkbox
+                      id="streamLink"
+                      checked={!(formData.diyStream ?? false)}
+                      onCheckedChange={(c) =>
+                        setValue("diyStream", c !== true, { shouldDirty: true })
+                      }
+                    />
+                    <Label htmlFor="streamLink" className="text-sm font-medium">
+                      Stream Link
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 bg-background border rounded-sm">
+                    <Checkbox
+                      id="streamGraphics"
+                      checked={formData.streamGraphics ?? false}
+                      onCheckedChange={(c) => setValue("streamGraphics", !!c)}
+                    />
+                    <Label htmlFor="streamGraphics" className="text-sm font-medium">
+                      On Screen Graphics
+                    </Label>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -269,7 +262,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
         <div className="space-y-4">
           <Card
             className={cn(
-              "cursor-pointer rounded-sm border-2 transition-all",
+              "cursor-pointer rounded-sm border-2 transition-all py-0 gap-0",
               services.includes("video")
                 ? "border-primary bg-primary/5"
                 : mainServiceMissing
@@ -305,442 +298,172 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
           </Card>
 
           {services.includes("video") && (
-            <div className="p-6 border-2 border-primary/20 rounded-sm bg-background space-y-6">
-              <Label className="font-bold text-lg block border-b pb-2">
-                Which type of video(s) are you interested in?
-              </Label>
-              <p className="text-[10px] text-muted-foreground -mt-2">
-                If you just want filming with no editing, there will be an
-                option for that later. This selection tells us what kind of
-                material to film.
-              </p>
+            <div className="p-6 border-2 border-primary/20 rounded-sm bg-background space-y-5 animate-in slide-in-from-top-4">
+              {/* Lecture / Panel Details — always shown */}
+              <div className="p-4 bg-primary/5 rounded-sm border border-primary/10 space-y-4">
+                <div className="flex items-center gap-2 font-bold">
+                  <Layout className="w-4 h-4 text-primary" />
+                  <span>Lecture / Panel Details</span>
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-xs">How many talks?</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      {...register("lectureTalksCount")}
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Duration per talk?</Label>
+                    <RadioGroup
+                      value={formData.lectureTalkDuration}
+                      onValueChange={(v: any) => {
+                        setValue("lectureTalkDuration", v);
+                        if (v === "longer (call sales)") onRedirect();
+                      }}
+                    >
+                      <div className="flex flex-col gap-1">
+                        {["up to 1hr", "up to 2hr", "up to 3hr", "longer (call sales)"].map((t) => (
+                          <div key={t} className="flex items-center space-x-2">
+                            <RadioGroupItem value={t} id={`dur-${t}`} />
+                            <Label htmlFor={`dur-${t}`} className="text-[10px]">{t}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="ppt"
+                    checked={formData.lecturePPT ?? false}
+                    onCheckedChange={(c) => setValue("lecturePPT", !!c)}
+                  />
+                  <Label htmlFor="ppt" className="text-sm">Does it have PPT slides?</Label>
+                </div>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Studio-only options */}
-                {formData.eventType === "studio" && (
-                  <>
-                    <div
-                      className="flex items-center space-x-3 p-4 border rounded-sm cursor-pointer"
-                      onClick={() => toggleArray("videoTypes", "podcast")}
-                    >
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={videoTypes.includes("podcast")}
-                          onCheckedChange={() =>
-                            toggleArray("videoTypes", "podcast")
-                          }
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label className="font-bold block cursor-pointer">
-                          Video Podcast
-                        </Label>
-                        <span className="text-[10px] text-muted-foreground">
-                          2x mirrorless kit + lighting tech
-                        </span>
-                      </div>
-                    </div>
-                    <div
-                      className="flex items-center space-x-3 p-4 border rounded-sm cursor-pointer"
-                      onClick={() => toggleArray("videoTypes", "web-video")}
-                    >
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={videoTypes.includes("web-video")}
-                          onCheckedChange={() =>
-                            toggleArray("videoTypes", "web-video")
-                          }
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label className="font-bold block cursor-pointer">
-                          Web Video
-                        </Label>
-                        <span className="text-[10px] text-muted-foreground">
-                          Custom duration content
-                        </span>
+              {/* Accordion: built-in cameras */}
+              <div className={cn("border-2 rounded-sm transition-all", formData.videoBuiltInEnabled ? "border-primary" : "border-border")}>
+                <div
+                  className="flex items-center gap-3 p-4 cursor-pointer select-none"
+                  onClick={() => setValue("videoBuiltInEnabled", !formData.videoBuiltInEnabled)}
+                >
+                  <div className={cn("w-2 h-2 rounded-full shrink-0 transition-colors", formData.videoBuiltInEnabled ? "bg-primary" : "bg-muted-foreground/40")} />
+                  <span className="font-bold text-sm">Does the venue have built-in cameras, and would you like to use it?</span>
+                </div>
+                {formData.videoBuiltInEnabled && (
+                  <div className="px-6 pb-5 pt-4 space-y-4 border-t animate-in slide-in-from-top-2">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Video Editing</Label>
+                      <div className="space-y-3 pl-2">
+                        {[
+                          { id: "lecture", label: "Lecture or Panel Discussion" },
+                          { id: "social-short", label: "Social Short" },
+                        ].map((opt) => (
+                          <div key={opt.id}>
+                            <div
+                              className="flex items-center space-x-2 cursor-pointer"
+                              onClick={() => toggleArray("videoBuiltInEditing", opt.id)}
+                            >
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={(formData.videoBuiltInEditing ?? []).includes(opt.id)}
+                                  onCheckedChange={() =>
+                                    toggleArray("videoBuiltInEditing", opt.id)
+                                  }
+                                />
+                              </div>
+                              <Label className="text-sm cursor-pointer">{opt.label}</Label>
+                            </div>
+                            {opt.id === "social-short" && (formData.videoBuiltInEditing ?? []).includes("social-short") && (
+                              <div className="pl-6 mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                                <Label className="text-xs whitespace-nowrap">How many social media short?</Label>
+                                <Input type="number" min={0} {...register("videoBuiltInSocialShortsCount")} className="bg-background max-w-20" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </>
-                )}
-
-                {/* Live-only options */}
-                {formData.eventType === "live" && (
-                  <>
-                    <div
-                      className="flex items-center space-x-3 p-4 border rounded-sm cursor-pointer"
-                      onClick={() => toggleArray("videoTypes", "highlight")}
-                    >
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={videoTypes.includes("highlight")}
-                          onCheckedChange={() =>
-                            toggleArray("videoTypes", "highlight")
-                          }
-                        />
-                      </div>
-                      <Label className="font-bold cursor-pointer">
-                        Event Highlight
-                      </Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="builtInRaw"
+                        checked={formData.videoBuiltInRawFootage ?? false}
+                        onCheckedChange={(c) => setValue("videoBuiltInRawFootage", !!c)}
+                      />
+                      <Label htmlFor="builtInRaw" className="text-sm font-bold">Raw Footage</Label>
                     </div>
-                    <div
-                      className="flex items-center space-x-3 p-4 border rounded-sm cursor-pointer"
-                      onClick={() => toggleArray("videoTypes", "lecture")}
-                    >
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={videoTypes.includes("lecture")}
-                          onCheckedChange={() =>
-                            toggleArray("videoTypes", "lecture")
-                          }
-                        />
-                      </div>
-                      <Label className="font-bold cursor-pointer">
-                        Lecture or Panel Discussion
-                      </Label>
-                    </div>
-                  </>
+                  </div>
                 )}
               </div>
 
-              {/* ── Highlight sub-questions ── */}
-              {videoTypes.includes("highlight") && (
-                <div className="p-6 bg-primary/5 rounded-2xl border-2 border-primary/10 space-y-4">
-                  <div className="flex items-center gap-2 font-bold text-primary">
-                    <Video className="w-4 h-4" /> Event Highlight Details
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Under 4 hours = half day rate. 4 hours or more = full day
-                    rate.
-                  </p>
-                  <div className="space-y-2">
-                    <Label className="text-xs">
-                      How many hours will we be filming?
-                    </Label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="number"
-                        min={0.5}
-                        max={24}
-                        step={0.5}
-                        {...register("highlightDurationHours")}
-                        className="bg-background max-w-30"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        hours
-                      </span>
-                      <span className="text-[10px] text-primary font-bold">
-                        {(formData.highlightDurationHours ?? 4) < 4
-                          ? "→ Half Day Rate"
-                          : "→ Full Day Rate"}
-                      </span>
-                    </div>
-                  </div>
+              {/* Accordion: TRS cameras */}
+              <div className={cn("border-2 rounded-sm transition-all", formData.videoTRSEnabled ? "border-primary" : "border-border")}>
+                <div
+                  className="flex items-center gap-3 p-4 cursor-pointer select-none"
+                  onClick={() => setValue("videoTRSEnabled", !formData.videoTRSEnabled)}
+                >
+                  <div className={cn("w-2 h-2 rounded-full shrink-0 transition-colors", formData.videoTRSEnabled ? "bg-primary" : "bg-muted-foreground/40")} />
+                  <span className="font-bold text-sm">Do you want The Recording Service to provide cameras?</span>
                 </div>
-              )}
-
-              {/* ── Podcast sub-questions ── */}
-              {videoTypes.includes("podcast") && (
-                <div className="p-6 bg-primary/5 rounded-2xl border-2 border-primary/10 space-y-4">
-                  <div className="flex items-center gap-2 font-bold text-primary">
-                    <Mic2 className="w-4 h-4" /> Podcast Details
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Guests should arrive at least 15 min before filming to get
-                    mic'd up.
-                  </p>
-                  <div className="grid grid-cols-2 gap-4">
+                {formData.videoTRSEnabled && (
+                  <div className="px-6 pb-5 pt-4 space-y-4 border-t animate-in slide-in-from-top-2">
                     <div className="space-y-2">
-                      <Label className="text-xs">Number of Episodes</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...register("podcastEpisodes")}
-                        className="bg-background"
-                      />
+                      <Label className="text-xs">No. of Camera Angles</Label>
+                      <Input type="number" min={1} {...register("videoTRSCameraAngles")} className="bg-background max-w-25" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs">
-                        Recording Duration (hrs)
-                      </Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...register("podcastDuration")}
-                        className="bg-background"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Web Video sub-questions ── */}
-              {videoTypes.includes("web-video") && (
-                <div className="p-6 bg-primary/5 rounded-2xl border-2 border-primary/10 space-y-4">
-                  <div className="flex items-center gap-2 font-bold text-primary">
-                    <Film className="w-4 h-4" /> Web Video Details
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Guests should arrive at least 15 min before filming to get
-                    mic'd up. Max 12 videos per day. Videos over 3 min → Call
-                    Sales.
-                  </p>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">People to Film</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...register("webVideoPeople")}
-                        className="bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Number of Videos</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...register("webVideoCount")}
-                        className="bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Length per Video (min)</Label>
-                      <Input
-                        type="number"
-                        {...register("webVideoDuration")}
-                        className="bg-background"
-                        placeholder="e.g. 2"
-                        onBlur={(e) => {
-                          if (parseFloat(e.target.value) > 3) onRedirect();
-                        }}
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        Max 3 min. e.g. enter 2 for a 2-minute video.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Lecture sub-questions ── */}
-              {videoTypes.includes("lecture") && (
-                <div className="p-6 bg-primary/5 rounded-2xl border-2 border-primary/10 space-y-6">
-                  <div className="flex items-center gap-2 font-bold text-primary">
-                    <Layout className="w-4 h-4" /> Lecture / Panel Details
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">How many talks?</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...register("lectureTalksCount")}
-                        className="bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Duration per talk?</Label>
-                      <RadioGroup
-                        value={formData.lectureTalkDuration}
-                        onValueChange={(v: any) => {
-                          setValue("lectureTalkDuration", v);
-                          if (v === "longer (call sales)") onRedirect();
-                        }}
-                      >
-                        <div className="flex flex-col gap-1">
-                          {[
-                            "up to 1hr",
-                            "up to 2hr",
-                            "up to 3hr",
-                            "longer (call sales)",
-                          ].map((t) => (
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Video Editing</Label>
+                      <div className="space-y-3 pl-2">
+                        {[
+                          { id: "lecture", label: "Lecture or Panel Discussion" },
+                          { id: "highlight", label: "Event Highlight" },
+                          { id: "social-short", label: "Social Short" },
+                        ].map((opt) => (
+                          <div key={opt.id}>
                             <div
-                              key={t}
-                              className="flex items-center space-x-2"
+                              className="flex items-center space-x-2 cursor-pointer"
+                              onClick={() => toggleArray("videoTRSEditing", opt.id)}
                             >
-                              <RadioGroupItem value={t} id={t} />
-                              <Label htmlFor={t} className="text-[10px]">
-                                {t}
-                              </Label>
+                              <div onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={(formData.videoTRSEditing ?? []).includes(opt.id)}
+                                  onCheckedChange={() =>
+                                    toggleArray("videoTRSEditing", opt.id)
+                                  }
+                                />
+                              </div>
+                              <Label className="text-sm cursor-pointer">{opt.label}</Label>
                             </div>
-                          ))}
-                        </div>
-                      </RadioGroup>
+                            {opt.id === "social-short" && (formData.videoTRSEditing ?? []).includes("social-short") && (
+                              <div className="pl-6 mt-2 flex items-center gap-2 animate-in slide-in-from-top-1">
+                                <Label className="text-xs whitespace-nowrap">How many social media short?</Label>
+                                <Input type="number" min={0} {...register("videoTRSSocialShortsCount")} className="bg-background max-w-20" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* PPT slides */}
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="ppt"
-                      checked={formData.lecturePPT ?? false}
-                      onCheckedChange={(c) => setValue("lecturePPT", !!c)}
-                    />
-                    <Label htmlFor="ppt" className="text-sm">
-                      Does it have PPT slides?
-                    </Label>
-                  </div>
-
-                  {/* Reuse stream material */}
-                  {services.includes("streaming") && (
-                    <div className="flex items-center space-x-2 p-3 bg-background border rounded-sm">
-                      <Checkbox
-                        id="fromStream"
-                        checked={formData.lectureFromStream ?? false}
-                        onCheckedChange={(c) =>
-                          setValue("lectureFromStream", !!c)
-                        }
-                      />
-                      <Label htmlFor="fromStream" className="text-sm">
-                        Are these video deliverables cuts of the same material
-                        you'd like us to live stream?
-                      </Label>
-                    </div>
-                  )}
-
-                  {/* Additional camera angles */}
-                  <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="angles"
-                        checked={formData.additionalAngles ?? false}
-                        onCheckedChange={(c) =>
-                          setValue("additionalAngles", !!c)
-                        }
+                        id="trsRaw"
+                        checked={formData.videoTRSRawFootage ?? false}
+                        onCheckedChange={(c) => setValue("videoTRSRawFootage", !!c)}
                       />
-                      <Label htmlFor="angles" className="text-sm">
-                        Would you like additional camera angles?
-                      </Label>
+                      <Label htmlFor="trsRaw" className="text-sm font-bold">Raw Footage</Label>
                     </div>
-                    {formData.additionalAngles && (
-                      <div className="flex items-center gap-3 pl-6 animate-in slide-in-from-top-2">
-                        <Input
-                          type="number"
-                          {...register("angleCount")}
-                          className="max-w-25 bg-background rounded-sm border-2"
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          additional angle(s)
-                        </span>
-                      </div>
-                    )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ══ SOCIAL SHORTS (always visible, outside the Services group) ═══════ */}
-      <Card
-        className={`border-2 rounded-sm transition-all ${formData.wantsSocialShorts ? "border-primary bg-primary/5" : "border-border"}`}
-      >
-        <CardContent className="p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            <Users className="text-primary w-6 h-6" />
-            <div
-              className="flex-1 cursor-pointer"
-              onClick={() =>
-                setValue("wantsSocialShorts", !formData.wantsSocialShorts)
-              }
-            >
-              <div className="font-bold text-lg">Social Shorts</div>
-              <p className="text-xs text-muted-foreground">
-                Optimized vertical clips for social media
-              </p>
-            </div>
-            <Checkbox
-              checked={formData.wantsSocialShorts ?? false}
-              onCheckedChange={(c) => setValue("wantsSocialShorts", !!c)}
-            />
-          </div>
-
-          {formData.wantsSocialShorts && (
-            <div className="space-y-6 animate-in slide-in-from-top-4 p-4 border-t">
-              <div className="space-y-2">
-                <Label className="font-bold">
-                  How many shorts would you like?
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  {...register("socialShortsCount")}
-                  className="bg-background max-w-37.5"
-                />
-              </div>
-              <div className="space-y-3">
-                <Label className="font-bold">Material Source</Label>
-                <RadioGroup
-                  value={formData.shortsSource}
-                  onValueChange={(v: any) => setValue("shortsSource", v)}
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex items-center space-x-2 p-3 bg-background border rounded-sm">
-                      <RadioGroupItem value="filming" id="sh1" />
-                      <Label htmlFor="sh1">
-                        Filming additional material (Adds Mirrorless Kit)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 bg-background border rounded-sm">
-                      <RadioGroupItem value="recut" id="sh2" />
-                      <Label htmlFor="sh2">
-                        Recutting existing material / footage library
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ══ CALL SALES redirects ════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card
-          className="border-2 rounded-sm border-dashed cursor-pointer opacity-70 hover:opacity-100"
-          onClick={onRedirect}
-        >
-          <CardContent className="flex items-center gap-4 p-4">
-            <AlertCircle className="w-5 h-5" />
-            <div className="flex-1 font-bold text-sm">
-              Concert Video (Call Sales)
-            </div>
-          </CardContent>
-        </Card>
-        <Card
-          className="border-2 rounded-sm border-dashed cursor-pointer opacity-70 hover:opacity-100"
-          onClick={onRedirect}
-        >
-          <CardContent className="flex items-center gap-4 p-4">
-            <Settings className="w-5 h-5" />
-            <div className="flex-1 font-bold text-sm">
-              Video Editing Only (Call Sales)
-            </div>
-          </CardContent>
-        </Card>
-        <Card
-          className="border-2 rounded-sm border-dashed cursor-pointer opacity-70 hover:opacity-100"
-          onClick={onRedirect}
-        >
-          <CardContent className="flex items-center gap-4 p-4">
-            <Settings className="w-5 h-5" />
-            <div className="flex-1 font-bold text-sm">Other (Call Sales)</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="pt-6 text-center text-muted-foreground space-y-1 font-medium">
-        <p className="text-primary font-bold text-[14px] ">
-          No live streaming or video capabilities require trucking
-        </p>
-        <p className="text-[14px] ">
-          Customer must provide internet upload speed of at least 15 mb/s per
-          platform
-        </p>
-      </div>
     </div>
   );
 }

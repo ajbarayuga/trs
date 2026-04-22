@@ -91,7 +91,18 @@ export const QuoteFormSchema = z.object({
 
   // ── Step 3: Services — Video ─────────────────────────────────────────────
 
-  videoTypes: z.array(z.string()).default([]), // UI: "highlight"|"lecture"|etc.
+  videoTypes: z.array(z.string()).default([]), // legacy — kept for draft restore
+
+  // Video Production — 2026 camera-source structure
+  videoBuiltInEnabled: z.boolean().default(false),
+  videoBuiltInEditing: z.array(z.string()).default([]), // "lecture" | "social-short"
+  videoBuiltInRawFootage: z.boolean().default(false),
+  videoBuiltInSocialShortsCount: z.coerce.number().min(0).max(50).default(0),
+  videoTRSEnabled: z.boolean().default(false),
+  videoTRSCameraAngles: z.coerce.number().min(1).max(20).default(1),
+  videoTRSEditing: z.array(z.string()).default([]), // "lecture" | "highlight" | "social-short"
+  videoTRSRawFootage: z.boolean().default(false),
+  videoTRSSocialShortsCount: z.coerce.number().min(0).max(50).default(0),
 
   // Web Video
   webVideoPeople: z.coerce.number().min(1).max(50).default(1),
@@ -126,11 +137,10 @@ export const QuoteFormSchema = z.object({
 
   audioServices: z.array(z.string()).default([]), // UI: "pa" | "band" | "recording"
 
-  // Mic counts — upper bound of 20 is realistic for any standard event
-  micWirelessHandheld: z.coerce.number().min(0).max(20).default(0),
-  micWirelessLav: z.coerce.number().min(0).max(20).default(0),
-  micWiredSM58: z.coerce.number().min(0).max(20).default(0),
-  micWiredGooseneck: z.coerce.number().min(0).max(20).default(0),
+  // Mic kit counts — 2026 kit model (each kit = 1 receiver set)
+  micWirelessComboKits: z.coerce.number().min(0).max(20).default(0),
+  micWiredMicKits: z.coerce.number().min(0).max(20).default(0),
+  micGooseneckMics: z.coerce.number().min(0).max(20).default(0),
   micRockBand: z.boolean().default(false),
   micNotSure: z.boolean().default(false),
 

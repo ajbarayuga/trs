@@ -31,7 +31,6 @@ import {
   Loader2,
   Send,
   AlertCircle,
-  PhoneCall,
 } from "lucide-react";
 
 // Steps:
@@ -112,10 +111,9 @@ export default function QuotePage() {
       socialShortsCount: 0,
       shortsSource: "recut",
       audioServices: [],
-      micWirelessHandheld: 0,
-      micWirelessLav: 0,
-      micWiredSM58: 0,
-      micWiredGooseneck: 0,
+      micWirelessComboKits: 0,
+      micWiredMicKits: 0,
+      micGooseneckMics: 0,
       micRockBand: false,
       micNotSure: false,
       playbackEnabled: false,
@@ -147,8 +145,9 @@ export default function QuotePage() {
     },
   });
 
-  const { watch, handleSubmit, reset } = methods;
+  const { watch, handleSubmit, reset, getValues } = methods;
   const formData = watch();
+  const lastAutoSaveFingerprintRef = useRef<string | null>(null);
 
   // ── Mount / loading state ────────────────────────────────────────────────
   // Prevents SSR hydration flash — page only renders after client mount
@@ -181,22 +180,23 @@ export default function QuotePage() {
 
   // Auto-save progress — only steps 2–5, never step 6 (success screen)
   // Step 6 snapshot lives only in memory and can't survive a refresh anyway
+  // Fingerprint values so we do not setState when watch() re-renders with the same data.
   useEffect(() => {
     if (path !== "quote" || currentStep < 2 || currentStep >= 6) return;
     try {
+      const values = getValues();
+      const fingerprint = JSON.stringify({ step: currentStep, values });
+      if (lastAutoSaveFingerprintRef.current === fingerprint) return;
+      lastAutoSaveFingerprintRef.current = fingerprint;
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({
-          step: currentStep,
-          values: methods.getValues(),
-          savedAt: Date.now(),
-        }),
+        JSON.stringify({ step: currentStep, values, savedAt: Date.now() }),
       );
-      setHasSavedProgress(true);
+      setHasSavedProgress((prev) => (prev ? prev : true));
     } catch {
       /* ignore storage errors */
     }
-  }, [formData, currentStep, path, methods]);
+  }, [formData, currentStep, path, getValues]);
 
   // ── Redirect modal state ─────────────────────────────────────────────────
   const [showRedirectModal, setShowRedirectModal] = useState(false);
@@ -567,7 +567,7 @@ export default function QuotePage() {
                   {currentStep === 1 && (
                     <Card className="p-20 text-center border-dashed border-2 bg-muted/5 rounded-[3rem] animate-in zoom-in-95 duration-500">
                       <p className="text-xl mb-10 text-muted-foreground font-medium">
-                        Ready to configure your production?
+                        Venue Equipment Check
                       </p>
                       <Button
                         type="button"

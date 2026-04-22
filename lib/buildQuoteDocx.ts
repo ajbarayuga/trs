@@ -329,7 +329,7 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
     if (!data.isZoomOnly) {
       out.push(
         bulletParagraph(
-          `CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) — ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`,
+          `CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`,
           "CAMERA SETUP:",
         ),
       );
@@ -366,7 +366,7 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
       out.push(subBulletParagraph("Production Lead + Lighting Technician"));
       out.push(
         subBulletParagraph(
-          `${data.podcastEpisodes ?? 1} episode(s) — ${data.podcastDuration ?? 1} hr recording session each`,
+          `${data.podcastEpisodes ?? 1} episode(s) - ${data.podcastDuration ?? 1} hr recording session each`,
         ),
       );
       out.push(
@@ -380,7 +380,7 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
       out.push(subBulletParagraph("Mirrorless camera kit + Studio lighting kit"));
       out.push(
         subBulletParagraph(
-          `${data.webVideoPeople ?? 1} person(s) filmed — ${data.webVideoCount ?? 1} video(s) produced — up to ${data.webVideoDuration ?? 3} min each`,
+          `${data.webVideoPeople ?? 1} person(s) filmed - ${data.webVideoCount ?? 1} video(s) produced - up to ${data.webVideoDuration ?? 3} min each`,
         ),
       );
       out.push(
@@ -392,11 +392,11 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
     if (activeVideoTypes.includes("highlight")) {
       out.push(bulletParagraph("EVENT HIGHLIGHT", "EVENT HIGHLIGHT"));
       out.push(
-        subBulletParagraph("Mirrorless camera kit — in 30 min, out 30 min"),
+        subBulletParagraph("Mirrorless camera kit - in 30 min, out 30 min"),
       );
       out.push(
         subBulletParagraph(
-          `Recording duration: ${data.highlightDurationHours ?? 4} hr(s) — ${(data.highlightDurationHours ?? 4) < 4 ? "Half Day Rate" : "Full Day Rate"}`,
+          `Recording duration: ${data.highlightDurationHours ?? 4} hr(s) - ${(data.highlightDurationHours ?? 4) < 4 ? "Half Day Rate" : "Full Day Rate"}`,
         ),
       );
       out.push(subBulletParagraph("Delivered as a creative highlight reel"));
@@ -408,7 +408,7 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
       out.push(subBulletParagraph("Camcorder kit + AV essential kit"));
       out.push(
         subBulletParagraph(
-          `${data.lectureTalksCount ?? 1} talk(s) — ${data.lectureTalkDuration ?? "up to 1hr"} each`,
+          `${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`,
         ),
       );
       if (data.lecturePPT) {
@@ -442,27 +442,24 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
       ),
     );
     if (!data.builtInAV?.includes("audio")) {
-      if ((data.micWirelessHandheld ?? 0) > 0) {
+      if ((data.micWirelessComboKits ?? 0) > 0) {
         out.push(
           subBulletParagraph(
-            `Wireless Handheld Mic ×${data.micWirelessHandheld}`,
+            `Wireless Combo Kit x${data.micWirelessComboKits}`,
           ),
         );
       }
-      if ((data.micWirelessLav ?? 0) > 0) {
-        out.push(subBulletParagraph(`Wireless Lav Mic ×${data.micWirelessLav}`));
+      if ((data.micWiredMicKits ?? 0) > 0) {
+        out.push(subBulletParagraph(`Wired Mic Kit (SM58) x${data.micWiredMicKits}`));
       }
-      if ((data.micWiredSM58 ?? 0) > 0) {
-        out.push(subBulletParagraph(`Wired SM58 ×${data.micWiredSM58}`));
-      }
-      if ((data.micWiredGooseneck ?? 0) > 0) {
+      if ((data.micGooseneckMics ?? 0) > 0) {
         out.push(
-          subBulletParagraph(`Wired Gooseneck ×${data.micWiredGooseneck}`),
+          subBulletParagraph(`Gooseneck Mic x${data.micGooseneckMics}`),
         );
       }
       if (data.micNotSure) {
         out.push(
-          subBulletParagraph("Mic quantity TBD — Producer will follow up"),
+          subBulletParagraph("Mic quantity TBD - Producer will follow up"),
         );
       }
     } else {
@@ -471,17 +468,17 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
     if (data.vogEnabled) {
       out.push(
         subBulletParagraph(
-          `Voice of God mic — ${data.vogAnnouncer === "tech" ? "announced by our audio tech" : "announced by client team"}`,
+          `Voice of God mic - ${data.vogAnnouncer === "tech" ? "announced by our audio tech" : "announced by client team"}`,
         ),
       );
     }
     if (data.monitorsEnabled && (data.monitors ?? 0) > 0) {
-      out.push(subBulletParagraph(`Stage monitor wedges ×${data.monitors}`));
+      out.push(subBulletParagraph(`Stage monitor wedges x${data.monitors}`));
     }
     if ((data.attendance ?? 0) > 0) {
       out.push(
         subBulletParagraph(
-          `Expected attendance: ${data.attendance} — speaker count calculated accordingly`,
+          `Expected attendance: ${data.attendance} - speaker count calculated accordingly`,
         ),
       );
     }
@@ -572,12 +569,12 @@ function termsParagraphs(): Paragraph[] {
       { indent: 240 },
     ),
     p("II. Cancellation Fee", { bold: true, sizePt: 11, blue: true }),
-    p("A. 30–6 Days Before Event:", { indent: 240 }),
+    p("A. 30-6 Days Before Event:", { indent: 240 }),
     p("1. Pre-Production: Fully billed for work completed to date", { indent: 480 }),
     p("2. Production Labor: 50% charge", { indent: 480 }),
     p("3. Equipment: 25% of quoted cost", { indent: 480 }),
     p("4. Post-Production: No charge", { indent: 480 }),
-    p("B. 5–1 Day Before Event:", { indent: 240 }),
+    p("B. 5-1 Day Before Event:", { indent: 240 }),
     p("1. Production Labor: 50% charge for all labor", { indent: 480 }),
     p("2. Equipment: 50% of quoted cost", { indent: 480 }),
     p("C. Less than 24 Hours:", { indent: 240 }),
@@ -634,7 +631,7 @@ function termsParagraphs(): Paragraph[] {
       { indent: 240 },
     ),
     p("VIII. Holidays", { bold: true, sizePt: 11, blue: true }),
-    p("A. The following holidays are billed at 1.5× labor rate:", { indent: 240 }),
+    p("A. The following holidays are billed at 1.5x labor rate:", { indent: 240 }),
   ];
   const h15 = [
     "New Year's Day",
@@ -648,7 +645,7 @@ function termsParagraphs(): Paragraph[] {
     out.push(p(`${i + 1}. ${h}`, { indent: 480 }));
   });
   out.push(
-    p("B. The following holidays are billed at 2× labor rate:", { indent: 240 }),
+    p("B. The following holidays are billed at 2x labor rate:", { indent: 240 }),
   );
   ["Thanksgiving", "Christmas Eve", "Christmas Day"].forEach((h, i) => {
     out.push(p(`${i + 1}. ${h}`, { indent: 480 }));
@@ -697,7 +694,7 @@ export function buildQuoteDocxDocument(
       data.audioServices?.includes("pa") ? "Audio / PA" : null,
     ]
       .filter(Boolean)
-      .join(" · ") || "Production Estimate";
+      .join(" | ") || "Production Estimate";
 
   const heroDate =
     data.hasDate && data.eventDate ? formatDate(data.eventDate) : fullDate;
@@ -900,7 +897,7 @@ export function buildQuoteDocxDocument(
   }
   if (hasSiteVisit) {
     pushProvideSub(
-      "Venue access for site visit — Producer will evaluate built-in AV and apply discounts accordingly",
+      "Venue access for site visit - Producer will evaluate built-in AV and apply discounts accordingly",
     );
   }
 
@@ -946,7 +943,7 @@ export function buildQuoteDocxDocument(
           indent: { left: 160 },
           children: [
             tr(
-              "* Times are approximate — based on an assumed 12:00 PM show start. Your Production Lead will confirm the final schedule.",
+              "* Times are approximate - based on an assumed 12:00 PM show start. Your Production Lead will confirm the final schedule.",
               { italics: true, sizePt: 10, color: "555555" },
             ),
           ],
@@ -960,7 +957,7 @@ export function buildQuoteDocxDocument(
           indent: { left: 160 },
           children: [
             tr(
-              "* Reception end time not shown — provide a program end time or duration for a complete work plan.",
+              "* Reception end time not shown - provide a program end time or duration for a complete work plan.",
               { italics: true, sizePt: 10, color: "555555" },
             ),
           ],
@@ -973,7 +970,7 @@ export function buildQuoteDocxDocument(
   scopePage.push(
     bulletParagraph(
       data.setting === "outdoor"
-        ? "TBD — your Production Lead will discuss a rain contingency plan before your event."
+        ? "TBD - your Production Lead will discuss a rain contingency plan before your event."
         : "N/A",
     ),
   );
@@ -999,7 +996,7 @@ export function buildQuoteDocxDocument(
     scopePage.push(
       loc(
         "AV Assessment",
-        "Site visit requested — Producer will evaluate and apply discounts accordingly",
+        "Site visit requested - Producer will evaluate and apply discounts accordingly",
       ),
     );
   }

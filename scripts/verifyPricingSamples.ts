@@ -20,7 +20,7 @@ const quoteContactBase = {
 const cases: Case[] = [
   {
     name: "INDOOR SOUNDSYSTEM",
-    expected: 954.8,
+    expected: 790.73,
     input: {
       ...quoteContactBase,
       eventType: "live",
@@ -34,7 +34,7 @@ const cases: Case[] = [
   },
   {
     name: "OUTDOOR SOUNDSYSTEM",
-    expected: 1167.18,
+    expected: 1003.11,
     input: {
       ...quoteContactBase,
       eventType: "live",
@@ -48,7 +48,7 @@ const cases: Case[] = [
   },
   {
     name: "LIVE STREAMING",
-    expected: 2780.06,
+    expected: 1930.31,
     input: {
       ...quoteContactBase,
       eventType: "live",
@@ -65,14 +65,16 @@ const cases: Case[] = [
   },
   {
     name: "VIDEO RECORDING",
-    expected: 1121.23,
+    expected: 1175.91,
     input: {
       ...quoteContactBase,
       eventType: "live",
       hasDuration: true,
       durationHours: 1,
       services: ["video"],
-      videoTypes: ["lecture"],
+      videoTRSEnabled: true,
+      videoTRSEditing: ["lecture"],
+      videoTRSCameraAngles: 1,
       lecturePPT: true,
       lectureTalksCount: 1,
       audioServices: [],
