@@ -473,8 +473,24 @@ export default function QuotePage() {
                   {currentStep === 2 && (
                     <div className="animate-in fade-in duration-700">
                       <StepTwo />
-                      <StepThree onRedirect={handleRedirectRequest} />
-                      <StepFourAV onRedirect={handleRedirectRequest} />
+                      {formData.eventType === "studio" ? (
+                        <Card className="mt-6 border-2 border-dashed rounded-sm bg-muted/20">
+                          <CardContent className="p-8 text-center space-y-2">
+                            <p className="text-lg font-black uppercase tracking-tight">
+                              Under Construction
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Studio-Style Recording options are being revised and
+                              will be available soon.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <>
+                          <StepThree onRedirect={handleRedirectRequest} />
+                          <StepFourAV onRedirect={handleRedirectRequest} />
+                        </>
+                      )}
                       <div className="flex justify-between mt-0 pt-8">
                         <Button
                           variant="ghost"
