@@ -884,7 +884,13 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
   const hasStreaming = data.services?.includes("streaming") ?? false;
   const hasVideo = data.services?.includes("video") ?? false;
   const hasPA = data.audioServices?.includes("pa") ?? false;
-  const activeVideoTypes = hasVideo ? (data.videoTypes ?? []) : [];
+  const studioVideoTypes = hasVideo ? (data.videoTypes ?? []) : [];
+  const videoBuiltInActive = hasVideo && (data.videoBuiltInEnabled ?? false);
+  const videoTRSActive = hasVideo && (data.videoTRSEnabled ?? false);
+  const builtInEditing = videoBuiltInActive ? (data.videoBuiltInEditing ?? []) : [];
+  const trsEditing = videoTRSActive ? (data.videoTRSEditing ?? []) : [];
+  const hasLecture = builtInEditing.includes("lecture") || trsEditing.includes("lecture");
+  const hasHighlight = trsEditing.includes("highlight");
 
   const servicesLine =
     [
@@ -1082,7 +1088,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
         {hasVideo && (
           <>
             <ServiceSubHeading title="Video Production" />
-            {activeVideoTypes.includes("podcast") && (
+            {studioVideoTypes.includes("podcast") && (
               <>
                 <BulletRow text="VIDEO PODCAST" bold />
                 <SubBulletRow text="2x Mirrorless camera kit + Studio lighting kit" />
@@ -1093,7 +1099,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <SubBulletRow text="Guests should arrive at least 15 minutes before filming to be mic'd up" />
               </>
             )}
-            {activeVideoTypes.includes("web-video") && (
+            {studioVideoTypes.includes("web-video") && (
               <>
                 <BulletRow text="WEB VIDEO" bold />
                 <SubBulletRow text="Mirrorless camera kit + Studio lighting kit" />
@@ -1103,30 +1109,32 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 <SubBulletRow text="Guests should arrive at least 15 minutes before filming to be mic'd up" />
               </>
             )}
-            {activeVideoTypes.includes("highlight") && (
+            {hasHighlight && (
               <>
                 <BulletRow text="EVENT HIGHLIGHT" bold />
                 <SubBulletRow text="Mirrorless camera kit - in 30 min, out 30 min" />
                 <SubBulletRow
-                  text={`Recording duration: ${data.highlightDurationHours ?? 4} hr(s) - ${(data.highlightDurationHours ?? 4) < 4 ? "Half Day Rate" : "Full Day Rate"}`}
+                  text={`Full Day Rate applies (duration based on event length)`}
                 />
                 <SubBulletRow text="Delivered as a creative highlight reel" />
               </>
             )}
-            {activeVideoTypes.includes("lecture") && (
+            {hasLecture && (
               <>
                 <BulletRow text="LECTURE OR PANEL DISCUSSION" bold />
-                <SubBulletRow text="Camcorder kit + AV essential kit" />
+                {videoTRSActive && trsEditing.includes("lecture") && (
+                  <SubBulletRow
+                    text={`${data.videoTRSCameraAngles ?? 1} camera angle(s) - camcorder kit(s) provided by TRS`}
+                  />
+                )}
+                {videoBuiltInActive && builtInEditing.includes("lecture") && (
+                  <SubBulletRow text="Using venue built-in cameras" />
+                )}
                 <SubBulletRow
                   text={`${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`}
                 />
                 {data.lecturePPT && (
                   <SubBulletRow text="Includes PowerPoint slide recording and integration" />
-                )}
-                {data.additionalAngles && (data.angleCount ?? 0) > 0 && (
-                  <SubBulletRow
-                    text={`${data.angleCount} additional camera angle(s)`}
-                  />
                 )}
                 <SubBulletRow text="STANDARD VIDEO EDIT: Audio touch-ups, subtitles (.srt), lower thirds, intro/outro screens" />
               </>

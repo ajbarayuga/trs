@@ -105,9 +105,13 @@ interface TimeWindow {
 function getServiceWindows(data: QuoteFormData): TimeWindow[] {
   const windows: TimeWindow[] = [];
   const isStreamingActive = data.services.includes("streaming");
-  const activeVideoTypes = data.services.includes("video")
-    ? (data.videoTypes ?? [])
-    : [];
+  const isVideoActive = data.services.includes("video");
+  const videoBuiltInActive = isVideoActive && (data.videoBuiltInEnabled ?? false);
+  const videoTRSActive = isVideoActive && (data.videoTRSEnabled ?? false);
+  const builtInEditing = videoBuiltInActive ? (data.videoBuiltInEditing ?? []) : [];
+  const trsEditing = videoTRSActive ? (data.videoTRSEditing ?? []) : [];
+  const hasLecture = builtInEditing.includes("lecture") || trsEditing.includes("lecture");
+  const hasHighlight = trsEditing.includes("highlight");
   const isPAActive = data.audioServices.includes("pa");
   const isOutdoor = data.setting === "outdoor";
   const lighting = data.lightingServices ?? [];
@@ -118,16 +122,12 @@ function getServiceWindows(data: QuoteFormData): TimeWindow[] {
   }
 
   // ── Lecture / Panel ─────────────────────────────────────────────────────────
-  // If lectureFromStream is true and streaming is also active, camera is shared
-  // so we don't add a duplicate window — streaming's larger window already covers it.
-  if (activeVideoTypes.includes("lecture") && data.eventType === "live") {
-    if (!isStreamingActive || !data.lectureFromStream) {
-      windows.push(SW.lecture);
-    }
+  if (hasLecture && data.eventType === "live") {
+    windows.push(SW.lecture);
   }
 
   // ── Event Highlight ─────────────────────────────────────────────────────────
-  if (activeVideoTypes.includes("highlight") && data.eventType === "live") {
+  if (hasHighlight && data.eventType === "live") {
     windows.push(SW.highlight);
   }
 

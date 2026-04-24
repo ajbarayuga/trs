@@ -94,6 +94,15 @@ export default function QuotePage() {
       streamGraphics: false,
       diyStream: false,
       videoTypes: [],
+      videoBuiltInEnabled: false,
+      videoBuiltInEditing: [],
+      videoBuiltInRawFootage: false,
+      videoBuiltInSocialShortsCount: 0,
+      videoTRSEnabled: false,
+      videoTRSCameraAngles: 1,
+      videoTRSEditing: [],
+      videoTRSRawFootage: false,
+      videoTRSSocialShortsCount: 0,
       webVideoPeople: 1,
       webVideoCount: 1,
       webVideoDuration: 3,
@@ -247,13 +256,6 @@ export default function QuotePage() {
         "audioServices",
         v.audioServices.filter((s: string) => s !== "recording"),
       );
-    // videoTypes — revert concert/other
-    if (v.videoTypes?.includes("concert") || v.videoTypes?.includes("other")) {
-      methods.setValue(
-        "videoTypes",
-        v.videoTypes.filter((t: string) => t !== "concert" && t !== "other"),
-      );
-    }
     // webVideo thresholds
     if (v.webVideoCount > 12) methods.setValue("webVideoCount", 12);
     if (v.webVideoDuration > 3) methods.setValue("webVideoDuration", 3);
@@ -275,10 +277,21 @@ export default function QuotePage() {
     reset();
   }, [reset]);
 
-  // Only treat videoTypes as active if Video Production service is selected
-  const activeVideoTypes = formData.services.includes("video")
-    ? (formData.videoTypes ?? [])
-    : [];
+  const isVideoActive = formData.services.includes("video");
+  // Studio web-video uses legacy videoTypes field
+  const studioVideoTypes = isVideoActive ? (formData.videoTypes ?? []) : [];
+  // Live lecture: check new camera-source fields
+  const builtInEditingActive =
+    isVideoActive && (formData.videoBuiltInEnabled ?? false)
+      ? (formData.videoBuiltInEditing ?? [])
+      : [];
+  const trsEditingActive =
+    isVideoActive && (formData.videoTRSEnabled ?? false)
+      ? (formData.videoTRSEditing ?? [])
+      : [];
+  const hasLectureActive =
+    builtInEditingActive.includes("lecture") ||
+    trsEditingActive.includes("lecture");
 
   const shouldRedirectToSales =
     formData.eventType === "other" ||
@@ -286,14 +299,12 @@ export default function QuotePage() {
     formData.locationType === "rented" ||
     formData.studioLocationType === "studio-rental" ||
     formData.isMultiDay === true ||
-    (activeVideoTypes.includes("web-video") &&
+    (studioVideoTypes.includes("web-video") &&
       (formData.webVideoCount > 12 || formData.webVideoDuration > 3)) ||
-    activeVideoTypes.includes("concert") ||
-    activeVideoTypes.includes("other") ||
     (formData.services.includes("streaming") &&
       (formData.cameraCount === "2+ (call sales)" ||
         formData.cameraCount === "not sure (call sales)")) ||
-    (activeVideoTypes.includes("lecture") &&
+    (hasLectureActive &&
       formData.lectureTalkDuration === "longer (call sales)") ||
     formData.audioServices.includes("band") ||
     formData.audioServices.includes("recording") ||

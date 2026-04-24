@@ -316,7 +316,13 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
   const hasStreaming = data.services?.includes("streaming") ?? false;
   const hasVideo = data.services?.includes("video") ?? false;
   const hasPA = data.audioServices?.includes("pa") ?? false;
-  const activeVideoTypes = hasVideo ? (data.videoTypes ?? []) : [];
+  const studioVideoTypes = hasVideo ? (data.videoTypes ?? []) : [];
+  const videoBuiltInActive = hasVideo && (data.videoBuiltInEnabled ?? false);
+  const videoTRSActive = hasVideo && (data.videoTRSEnabled ?? false);
+  const builtInEditing = videoBuiltInActive ? (data.videoBuiltInEditing ?? []) : [];
+  const trsEditing = videoTRSActive ? (data.videoTRSEditing ?? []) : [];
+  const hasLecture = builtInEditing.includes("lecture") || trsEditing.includes("lecture");
+  const hasHighlight = trsEditing.includes("highlight");
 
   if (hasStreaming) {
     out.push(serviceSubParagraph("Live Streaming"));
@@ -358,78 +364,38 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
 
   if (hasVideo) {
     out.push(serviceSubParagraph("Video Production"));
-    if (activeVideoTypes.includes("podcast")) {
+    if (studioVideoTypes.includes("podcast")) {
       out.push(bulletParagraph("VIDEO PODCAST", "VIDEO PODCAST"));
-      out.push(
-        subBulletParagraph("2x Mirrorless camera kit + Studio lighting kit"),
-      );
+      out.push(subBulletParagraph("2x Mirrorless camera kit + Studio lighting kit"));
       out.push(subBulletParagraph("Production Lead + Lighting Technician"));
-      out.push(
-        subBulletParagraph(
-          `${data.podcastEpisodes ?? 1} episode(s) - ${data.podcastDuration ?? 1} hr recording session each`,
-        ),
-      );
-      out.push(
-        subBulletParagraph(
-          "Guests should arrive at least 15 minutes before filming to be mic'd up",
-        ),
-      );
+      out.push(subBulletParagraph(`${data.podcastEpisodes ?? 1} episode(s) - ${data.podcastDuration ?? 1} hr recording session each`));
+      out.push(subBulletParagraph("Guests should arrive at least 15 minutes before filming to be mic'd up"));
     }
-    if (activeVideoTypes.includes("web-video")) {
+    if (studioVideoTypes.includes("web-video")) {
       out.push(bulletParagraph("WEB VIDEO", "WEB VIDEO"));
       out.push(subBulletParagraph("Mirrorless camera kit + Studio lighting kit"));
-      out.push(
-        subBulletParagraph(
-          `${data.webVideoPeople ?? 1} person(s) filmed - ${data.webVideoCount ?? 1} video(s) produced - up to ${data.webVideoDuration ?? 3} min each`,
-        ),
-      );
-      out.push(
-        subBulletParagraph(
-          "Guests should arrive at least 15 minutes before filming to be mic'd up",
-        ),
-      );
+      out.push(subBulletParagraph(`${data.webVideoPeople ?? 1} person(s) filmed - ${data.webVideoCount ?? 1} video(s) produced - up to ${data.webVideoDuration ?? 3} min each`));
+      out.push(subBulletParagraph("Guests should arrive at least 15 minutes before filming to be mic'd up"));
     }
-    if (activeVideoTypes.includes("highlight")) {
+    if (hasHighlight) {
       out.push(bulletParagraph("EVENT HIGHLIGHT", "EVENT HIGHLIGHT"));
-      out.push(
-        subBulletParagraph("Mirrorless camera kit - in 30 min, out 30 min"),
-      );
-      out.push(
-        subBulletParagraph(
-          `Recording duration: ${data.highlightDurationHours ?? 4} hr(s) - ${(data.highlightDurationHours ?? 4) < 4 ? "Half Day Rate" : "Full Day Rate"}`,
-        ),
-      );
+      out.push(subBulletParagraph("Mirrorless camera kit - in 30 min, out 30 min"));
+      out.push(subBulletParagraph("Full Day Rate applies (duration based on event length)"));
       out.push(subBulletParagraph("Delivered as a creative highlight reel"));
     }
-    if (activeVideoTypes.includes("lecture")) {
-      out.push(
-        bulletParagraph("LECTURE OR PANEL DISCUSSION", "LECTURE OR PANEL DISCUSSION"),
-      );
-      out.push(subBulletParagraph("Camcorder kit + AV essential kit"));
-      out.push(
-        subBulletParagraph(
-          `${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`,
-        ),
-      );
+    if (hasLecture) {
+      out.push(bulletParagraph("LECTURE OR PANEL DISCUSSION", "LECTURE OR PANEL DISCUSSION"));
+      if (videoTRSActive && trsEditing.includes("lecture")) {
+        out.push(subBulletParagraph(`${data.videoTRSCameraAngles ?? 1} camera angle(s) - camcorder kit(s) provided by TRS`));
+      }
+      if (videoBuiltInActive && builtInEditing.includes("lecture")) {
+        out.push(subBulletParagraph("Using venue built-in cameras"));
+      }
+      out.push(subBulletParagraph(`${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`));
       if (data.lecturePPT) {
-        out.push(
-          subBulletParagraph(
-            "Includes PowerPoint slide recording and integration",
-          ),
-        );
+        out.push(subBulletParagraph("Includes PowerPoint slide recording and integration"));
       }
-      if (data.additionalAngles && (data.angleCount ?? 0) > 0) {
-        out.push(
-          subBulletParagraph(
-            `${data.angleCount} additional camera angle(s)`,
-          ),
-        );
-      }
-      out.push(
-        subBulletParagraph(
-          "STANDARD VIDEO EDIT: Audio touch-ups, subtitles (.srt), lower thirds, intro/outro screens",
-        ),
-      );
+      out.push(subBulletParagraph("STANDARD VIDEO EDIT: Audio touch-ups, subtitles (.srt), lower thirds, intro/outro screens"));
     }
   }
 
