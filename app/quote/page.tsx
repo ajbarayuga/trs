@@ -459,7 +459,7 @@ export default function QuotePage() {
 
                   {/* Step 1 — Start */}
                   {currentStep === 1 && (
-                    <Card className="p-12 border-dashed border-2 bg-muted/5 rounded-sm animate-in zoom-in-95 duration-500 space-y-8">
+                    <Card className="bg-muted/5 rounded-sm animate-in zoom-in-95 duration-500 space-y-8">
                       <VenueEquipmentCheck />
                       <div className="flex justify-center">
                         <CtaButton type="button" onClick={() => goToStep(2)}>
