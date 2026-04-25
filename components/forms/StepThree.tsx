@@ -12,10 +12,8 @@ import {
   Video,
   Share2,
   Users,
-  AlertCircle,
   Camera,
   Layout,
-  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +45,7 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+    <div className="animate-in fade-in duration-500">
       {/* ══ SERVICES (merged Streaming + Video) ═════════════════════════════ */}
       <div className="space-y-6">
         {/* Section header — unified label matching Audio-Visual step pattern */}
@@ -110,119 +108,82 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
 
           {services.includes("streaming") && (
             <div className="p-6 border-2 border-primary/20 rounded-sm bg-background space-y-8 animate-in slide-in-from-top-4">
-              {/* Built-in AV shortcut */}
-              <div className="flex items-center space-x-3 p-4 bg-primary/5 rounded-sm border border-primary/10">
-                <Checkbox
-                  id="zoom"
-                  checked={formData.isZoomOnly ?? false}
-                  onCheckedChange={(c) => setValue("isZoomOnly", !!c)}
-                />
-                <Label htmlFor="zoom" className="text-sm font-medium">
-                  Does the venue have built-in AV for Zoom streaming, and would
-                  you like to use it? (If yes, you can skip the questions below.)
-                </Label>
-              </div>
-
-              {!formData.isZoomOnly && (
-                <div className="space-y-8">
-                  {/* Camera count */}
-                  <div className="space-y-4">
-                    <Label className="flex items-center gap-2 font-bold">
-                      <Camera className="w-4 h-4 text-primary" /> How many cameras?
-                    </Label>
-                    <RadioGroup
-                      value={formData.cameraCount}
-                      onValueChange={(v) => {
-                        setValue("cameraCount", v);
-                        if (v.includes("call sales")) onRedirect();
-                      }}
-                    >
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {[
-                          "1",
-                          "2",
-                          "2+ (call sales)",
-                          "not sure (call sales)",
-                        ].map((opt) => (
-                          <div
-                            key={opt}
-                            className="flex items-center space-x-2 p-3 border rounded-sm bg-background"
-                          >
-                            <RadioGroupItem value={opt} id={`cam-${opt}`} />
-                            <Label htmlFor={`cam-${opt}`} className="text-xs">
-                              {opt}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {/* Manned vs. unmanned — only relevant when 2 cameras selected */}
-                  {formData.cameraCount === "2" && (
-                    <div className="space-y-3 p-4 bg-muted/30 rounded-2xl border">
-                      <Label className="flex items-center gap-2 font-bold text-sm">
-                        <Users className="w-4 h-4 text-primary" /> Will both
-                        cameras need a dedicated operator?
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        An unmanned camera is set up by your streaming tech but
-                        runs on its own during the show — no operator needed.
+              <div className="space-y-8">
+                  {formData.builtInAV?.includes("cameras") ? (
+                    <div className="p-4 border border-green-200 bg-green-50/50 rounded-sm space-y-0.5">
+                      <p className="text-xs font-bold text-green-700">
+                        ✓ Camera kit removed — venue cameras will be used
                       </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div
-                          className={`flex items-center gap-3 p-3 border rounded-sm cursor-pointer transition-all ${!formData.hasUnmannedCameras ? "border-primary bg-primary/5" : "border-border bg-background"}`}
-                          onClick={() => setValue("hasUnmannedCameras", false)}
+                      <p className="text-[10px] text-muted-foreground">
+                        Go back to Step 1 to change this.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Camera count */}
+                      <div className="space-y-4">
+                        <Label className="flex items-center gap-2 font-bold">
+                          <Camera className="w-4 h-4 text-primary" /> How many cameras?
+                        </Label>
+                        <RadioGroup
+                          value={formData.cameraCount}
+                          onValueChange={(v) => {
+                            setValue("cameraCount", v);
+                            if (v.includes("call sales")) onRedirect();
+                          }}
                         >
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 shrink-0 ${!formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">Yes, both are manned</p>
-                            <p className="text-xs text-muted-foreground">2 camera operators billed</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {["1", "2", "2+ (call sales)", "not sure (call sales)"].map((opt) => (
+                              <div
+                                key={opt}
+                                className="flex items-center space-x-2 p-3 border rounded-sm bg-background"
+                              >
+                                <RadioGroupItem value={opt} id={`cam-${opt}`} />
+                                <Label htmlFor={`cam-${opt}`} className="text-xs">
+                                  {opt}
+                                </Label>
+                              </div>
+                            ))}
                           </div>
-                        </div>
-                        <div
-                          className={`flex items-center gap-3 p-3 border rounded-sm cursor-pointer transition-all ${formData.hasUnmannedCameras ? "border-primary bg-primary/5" : "border-border bg-background"}`}
-                          onClick={() => setValue("hasUnmannedCameras", true)}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 shrink-0 ${formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">1 camera is unmanned</p>
-                            <p className="text-xs text-muted-foreground">1 operator billed (saves cost)</p>
-                          </div>
-                        </div>
+                        </RadioGroup>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Built-in camera source — shown when venue has built-in cameras */}
-                  {formData.builtInAV?.includes("cameras") && (
-                    <div className="space-y-4 p-4 border-2 border-orange-200 bg-orange-50/30 rounded-2xl">
-                      <Label className="font-bold text-orange-700">
-                        Venue has Built-in Cameras
-                      </Label>
-                      <RadioGroup
-                        value={formData.cameraSource}
-                        onValueChange={(v: any) => setValue("cameraSource", v)}
-                      >
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <div className="flex items-center space-x-2 bg-background p-3 rounded-sm border">
-                            <RadioGroupItem value="built-in" id="b1" />
-                            <Label htmlFor="b1">Use built-in (No cam kits needed)</Label>
-                          </div>
-                          <div className="flex items-center space-x-2 bg-background p-3 rounded-sm border">
-                            <RadioGroupItem value="bring" id="b2" />
-                            <Label htmlFor="b2">Bring in cameras</Label>
+                      {/* Manned vs. unmanned — only relevant when 2 cameras selected */}
+                      {formData.cameraCount === "2" && (
+                        <div className="space-y-3 p-4 bg-muted/30 rounded-2xl border">
+                          <Label className="flex items-center gap-2 font-bold text-sm">
+                            <Users className="w-4 h-4 text-primary" /> Will both cameras need a dedicated operator?
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            An unmanned camera is set up by your streaming tech but runs on its own during the show — no operator needed.
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div
+                              className={`flex items-center gap-3 p-3 border rounded-sm cursor-pointer transition-all ${!formData.hasUnmannedCameras ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                              onClick={() => setValue("hasUnmannedCameras", false)}
+                            >
+                              <div className={`w-4 h-4 rounded-full border-2 shrink-0 ${!formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`} />
+                              <div>
+                                <p className="text-sm font-medium">Yes, both are manned</p>
+                                <p className="text-xs text-muted-foreground">Both cameras have dedicated operators</p>
+                              </div>
+                            </div>
+                            <div
+                              className={`flex items-center gap-3 p-3 border rounded-sm cursor-pointer transition-all ${formData.hasUnmannedCameras ? "border-primary bg-primary/5" : "border-border bg-background"}`}
+                              onClick={() => setValue("hasUnmannedCameras", true)}
+                            >
+                              <div className={`w-4 h-4 rounded-full border-2 shrink-0 ${formData.hasUnmannedCameras ? "border-primary bg-primary" : "border-muted-foreground"}`} />
+                              <div>
+                                <p className="text-sm font-medium">1 camera is unmanned</p>
+                                <p className="text-xs text-muted-foreground">Runs on its own — no dedicated operator</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </RadioGroup>
-                    </div>
+                      )}
+                    </>
                   )}
-                </div>
-              )}
+              </div>
 
               {/* Client doc: TRS-provided streaming options */}
               <div className="space-y-4 pt-2 border-t border-border/50">
@@ -388,14 +349,6 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                         ))}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="builtInRaw"
-                        checked={formData.videoBuiltInRawFootage ?? false}
-                        onCheckedChange={(c) => setValue("videoBuiltInRawFootage", !!c)}
-                      />
-                      <Label htmlFor="builtInRaw" className="text-sm font-bold">Raw Footage</Label>
-                    </div>
                   </div>
                 )}
               </div>
@@ -447,14 +400,6 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                           </div>
                         ))}
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="trsRaw"
-                        checked={formData.videoTRSRawFootage ?? false}
-                        onCheckedChange={(c) => setValue("videoTRSRawFootage", !!c)}
-                      />
-                      <Label htmlFor="trsRaw" className="text-sm font-bold">Raw Footage</Label>
                     </div>
                   </div>
                 )}

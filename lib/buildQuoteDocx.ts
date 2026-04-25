@@ -332,32 +332,26 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
         "STREAM KIT:",
       ),
     );
-    if (!data.isZoomOnly) {
+    out.push(
+      bulletParagraph(
+        `CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`,
+        "CAMERA SETUP:",
+      ),
+    );
+    if (data.streamGraphics) {
       out.push(
         bulletParagraph(
-          `CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`,
-          "CAMERA SETUP:",
+          "STREAM GRAPHICS: On-screen overlays and branding prepared",
+          "STREAM GRAPHICS:",
         ),
       );
-      if (data.streamGraphics) {
-        out.push(
-          bulletParagraph(
-            "STREAM GRAPHICS: On-screen overlays and branding prepared",
-            "STREAM GRAPHICS:",
-          ),
-        );
-      }
-      if (!data.diyStream) {
-        out.push(
-          bulletParagraph(
-            "STREAM LINK SETUP: Destination platform configured by our tech",
-            "STREAM LINK SETUP:",
-          ),
-        );
-      }
-    } else {
+    }
+    if (!data.diyStream) {
       out.push(
-        bulletParagraph("Using all venue built-in AV to stream to Zoom only"),
+        bulletParagraph(
+          "STREAM LINK SETUP: Destination platform configured by our tech",
+          "STREAM LINK SETUP:",
+        ),
       );
     }
   }

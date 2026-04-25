@@ -109,6 +109,14 @@ export const calculateSOW = (data: QuoteFormData) => {
   const hasBuiltInAudio = data.builtInAV?.includes("audio");
   const hasBuiltInPJ = data.builtInAV?.includes("projector");
   const hasBuiltInTVs = data.builtInAV?.includes("tvs");
+
+  // ── More Event AV section is hidden in the UI while being revised ─────────
+  // Force to off regardless of saved draft data so no phantom charges appear.
+  // Restore data.* references here when each sub-section is re-enabled.
+  const wantsProjector = false;
+  const wantsTVs = false;
+  const wantsConfidenceMonitors = false;
+
   const hasAnyCoreAVService =
     isStreamingActive || isPAActive || hasAnyVideo;
 
@@ -397,7 +405,7 @@ export const calculateSOW = (data: QuoteFormData) => {
   // ── 5. MORE EVENT AV ─────────────────────────────────────────────────────
 
   // Projector & Screen — skipped if venue has built-in projector
-  if (data.wantsProjector && !hasBuiltInPJ) {
+  if (wantsProjector && !hasBuiltInPJ) {
     const screenCount = data.projectorScreenCount ?? 1;
     // "not-sure" falls back to 12ft — label it "TBD (est. 12ft)" so the quote is transparent
     const is16ft = data.projectorScreenSize === "16ft";
@@ -443,7 +451,7 @@ export const calculateSOW = (data: QuoteFormData) => {
   }
 
   // Big Screen TVs — skipped if venue has built-in TVs
-  if (data.wantsTVs && !hasBuiltInTVs) {
+  if (wantsTVs && !hasBuiltInTVs) {
     const tvCount = data.tvCount ?? 1;
     // "other" and unset fall back to 75" — label it visibly so PL can confirm
     const tvIs85 = data.tvSize === "85";
@@ -479,7 +487,7 @@ export const calculateSOW = (data: QuoteFormData) => {
   }
 
   // Confidence Monitors
-  if (data.wantsConfidenceMonitors) {
+  if (wantsConfidenceMonitors) {
     const cmCount = data.confidenceMonitorCount ?? 1;
     addItem(
       "Confidence Monitor",
@@ -491,8 +499,8 @@ export const calculateSOW = (data: QuoteFormData) => {
     needsTrucking = true;
   }
 
-  // Lighting
-  const lighting = data.lightingServices ?? [];
+  // Lighting — hidden in UI, forced off (see More Event AV guard above)
+  const lighting: string[] = [];
 
   if (lighting.includes("stage-wash")) {
     addItem(
@@ -538,8 +546,8 @@ export const calculateSOW = (data: QuoteFormData) => {
     needsTrucking = true;
   }
 
-  // Photography
-  const photo = data.photographyServices ?? [];
+  // Photography — hidden in UI, forced off (see More Event AV guard above)
+  const photo: string[] = [];
   if (photo.includes("photo-booth"))
     addItem(
       "Photo Booth",
@@ -584,11 +592,11 @@ export const calculateSOW = (data: QuoteFormData) => {
     if (isPAActive) trackWindow(data.setting === "outdoor" ? SW.paOutdoor : SW.paIndoor);
     if (hasLecture) trackWindow(SW.lecture);
     if (hasHighlight) trackWindow(SW.highlight);
-    if (data.wantsProjector && !hasBuiltInPJ) {
+    if (wantsProjector && !hasBuiltInPJ) {
       trackWindow(data.projectorScreenSize === "16ft" ? SW.projector16ft : SW.projector12ft);
     }
-    if (data.wantsTVs && !hasBuiltInTVs) trackWindow(SW.tv);
-    if (data.wantsConfidenceMonitors) trackWindow(SW.confidenceMonitor);
+    if (wantsTVs && !hasBuiltInTVs) trackWindow(SW.tv);
+    if (wantsConfidenceMonitors) trackWindow(SW.confidenceMonitor);
     if (lighting.includes("stage-wash")) trackWindow(SW.stageWash);
     if (lighting.includes("spotlight")) trackWindow(SW.spotlight);
     if (lighting.includes("uplights-stage")) {

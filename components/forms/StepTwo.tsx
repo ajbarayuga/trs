@@ -7,8 +7,14 @@ import {
   Video,
   Home,
   HelpCircle,
+  Camera,
+  Volume2,
+  Monitor,
+  Tv,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function VenueEquipmentCheck() {
   const { watch, setValue, getValues } = useFormContext<QuoteFormData>();
@@ -27,6 +33,10 @@ export function VenueEquipmentCheck() {
         ? withoutNotSure.filter((i: string) => i !== id)
         : [...withoutNotSure, id];
       setValue("builtInAV", next, { shouldValidate: false, shouldDirty: true });
+      // Keep cameraSource in sync: venue has built-in cameras → use them by default
+      if (id === "cameras") {
+        setValue("cameraSource", next.includes("cameras") ? "built-in" : "bring", { shouldDirty: true });
+      }
     },
     [getValues, setValue],
   );
@@ -34,7 +44,7 @@ export function VenueEquipmentCheck() {
   const isNotSure = formData.builtInAV?.includes("not-sure") ?? false;
 
   return (
-    <div className="p-8 border-2 border-primary/20 rounded-sm bg-primary/5 space-y-6">
+    <div className="space-y-6">
       <div>
         <h3 className="text-xl font-black tracking-tight uppercase">
           Venue Equipment Check
@@ -49,70 +59,72 @@ export function VenueEquipmentCheck() {
         discount your quote accordingly.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-4">
         {[
-          { id: "cameras", l: "Cameras / Video", note: "Removes camera kit from quote" },
-          { id: "audio", l: "Sound System", note: "Removes sound kit & mics" },
-          { id: "projector", l: "Projector & Screen", note: "Removes PJ & Screen line item" },
-          { id: "tvs", l: "TVs", note: "Removes TV line item" },
+          { id: "cameras", l: "Cameras / Video", note: "Removes camera kit from quote", icon: Camera },
+          { id: "audio", l: "Sound System", note: "Removes sound kit & mics", icon: Volume2 },
+          { id: "projector", l: "Projector & Screen", note: "Removes PJ & Screen line item", icon: Monitor },
+          { id: "tvs", l: "TVs", note: "Removes TV line item", icon: Tv },
         ].map((item) => {
-          const isChecked = formData.builtInAV?.includes(item.id);
+          const isChecked = formData.builtInAV?.includes(item.id) ?? false;
           return (
-            <div
+            <Card
               key={item.id}
               className={cn(
-                "flex items-start space-x-3 p-4 bg-background border-2 rounded-sm cursor-pointer transition-all select-none",
+                "cursor-pointer rounded-sm border-2 transition-all py-0 gap-0",
                 isNotSure
                   ? "opacity-40 pointer-events-none border-border"
                   : isChecked
-                    ? "border-primary ring-1 ring-primary/10 shadow-sm"
-                    : "border-border hover:border-primary/20",
+                    ? "border-primary bg-primary/5"
+                    : "border-border",
               )}
               onClick={() => !isNotSure && toggleAV(item.id)}
             >
-              <div
-                className={cn(
-                  "w-5 h-5 mt-0.5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0",
-                  isChecked ? "bg-primary border-primary" : "border-muted",
-                )}
-              >
-                {isChecked && <div className="w-2 h-2 bg-white rounded-sm" />}
-              </div>
-              <div>
-                <span className="font-bold text-xs uppercase tracking-tight block">{item.l}</span>
-                <span className="text-[9px] text-muted-foreground">{item.note}</span>
-              </div>
-            </div>
+              <CardContent className="flex items-center gap-4 p-6">
+                <item.icon className="w-6 h-6 shrink-0 text-primary" />
+                <div className="flex-1">
+                  <div className="font-bold text-lg">{item.l}</div>
+                  <p className="text-xs text-muted-foreground">{item.note}</p>
+                </div>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={() => !isNotSure && toggleAV(item.id)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
-      </div>
 
-      <div
-        className={cn(
-          "flex items-start space-x-3 p-4 border-2 rounded-sm cursor-pointer transition-all select-none",
-          isNotSure
-            ? "border-amber-400 bg-amber-50/60 ring-1 ring-amber-200"
-            : "border-dashed border-border hover:border-amber-300 bg-background",
-        )}
-        onClick={() => toggleAV("not-sure")}
-      >
-        <div
+        <Card
           className={cn(
-            "w-5 h-5 mt-0.5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0",
-            isNotSure ? "bg-amber-400 border-amber-400" : "border-muted",
+            "cursor-pointer rounded-sm border-2 transition-all py-0 gap-0",
+            isNotSure
+              ? "border-amber-400 bg-amber-50/60"
+              : "border-dashed border-border",
           )}
+          onClick={() => toggleAV("not-sure")}
         >
-          {isNotSure && <div className="w-2 h-2 bg-white rounded-sm" />}
-        </div>
-        <div>
-          <span className="font-bold text-xs uppercase tracking-tight block text-amber-700">
-            Not Sure — Send Someone to Check
-          </span>
-          <span className="text-[9px] text-muted-foreground">
-            A Producer will schedule a free site visit to assess what your
-            venue has and apply discounts accordingly.
-          </span>
-        </div>
+          <CardContent className="flex items-center gap-4 p-6">
+            <HelpCircle className={cn("w-6 h-6 shrink-0", isNotSure ? "text-amber-500" : "text-primary")} />
+            <div className="flex-1">
+              <div className={cn("font-bold text-lg", isNotSure ? "text-amber-700" : "")}>
+                Not Sure — Send Someone to Check
+              </div>
+              <p className="text-xs text-muted-foreground">
+                A Producer will schedule a free site visit to assess what your venue has and apply discounts.
+              </p>
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={isNotSure}
+                onCheckedChange={() => toggleAV("not-sure")}
+                className={isNotSure ? "data-[state=checked]:bg-amber-400 data-[state=checked]:border-amber-400" : ""}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {isNotSure && (
@@ -174,7 +186,7 @@ export function StepTwo({
                   "w-4 h-4 mt-3 rounded-full border-2 flex items-center justify-center",
                   formData.eventType === cat.id
                     ? "border-primary"
-                    : "border-muted",
+                    : "border-foreground/30",
                 )}
               >
                 {formData.eventType === cat.id && (

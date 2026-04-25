@@ -1066,21 +1066,14 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
               text="STREAM KIT: Encoder, switcher, and stream control system"
               bold
             />
-            {!data.isZoomOnly && (
-              <>
-                <BulletRow
-                  text={`CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`}
-                />
-                {data.streamGraphics && (
-                  <BulletRow text="STREAM GRAPHICS: On-screen overlays and branding prepared" />
-                )}
-                {!data.diyStream && (
-                  <BulletRow text="STREAM LINK SETUP: Destination platform configured by our tech" />
-                )}
-              </>
+            <BulletRow
+              text={`CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`}
+            />
+            {data.streamGraphics && (
+              <BulletRow text="STREAM GRAPHICS: On-screen overlays and branding prepared" />
             )}
-            {data.isZoomOnly && (
-              <BulletRow text="Using all venue built-in AV to stream to Zoom only" />
+            {!data.diyStream && (
+              <BulletRow text="STREAM LINK SETUP: Destination platform configured by our tech" />
             )}
           </>
         )}

@@ -24,7 +24,6 @@ import {
   Camera,
   AlertCircle,
   Users,
-  Music,
   Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -77,7 +76,7 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
   return (
     <div className="space-y-12 animate-in fade-in duration-500 pb-10">
       {/* ══ SERVICES CONTINUED: PUBLIC ADDRESS + MORE EVENT AV ═════════════ */}
-      <div className="space-y-3">
+      <div className="space-y-6 pt-6">
           {/* Public Address */}
           <Card
             className={cn(
@@ -150,6 +149,17 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
           {/* PA sub-questions */}
           {audioServices.includes("pa") && (
             <div className="space-y-8 p-6 border-2 border-primary/20 rounded-sm bg-background animate-in slide-in-from-top-4">
+              {/* ── Venue sound system note ── */}
+              {(formData.builtInAV ?? []).includes("audio") && (
+                <div className="p-4 border border-green-200 bg-green-50/50 rounded-sm space-y-0.5">
+                  <p className="text-xs font-bold text-green-700">
+                    ✓ Audio kit removed — venue sound system will be used
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Microphone counts below still apply. Go back to Step 1 to change this.
+                  </p>
+                </div>
+              )}
               {/* ── Event setting (requested under Public Address) ── */}
               <div className="space-y-3">
                 <Label className="font-black uppercase tracking-widest text-[10px] text-primary">
@@ -233,58 +243,6 @@ export function StepFourAV({ onRedirect }: { onRedirect: () => void }) {
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* ── Playback ── */}
-              <div className="space-y-4">
-                <Label className="font-black uppercase tracking-widest text-[10px] text-primary">
-                  Playback of Pre-Recorded Audio?
-                </Label>
-                <p className="text-[10px] text-muted-foreground">
-                  Backing tracks, pre-show music, etc.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setValue("playbackEnabled", true)}
-                    className={`flex-1 p-3 rounded-sm border-2 font-bold text-sm transition-all ${formData.playbackEnabled ? "border-primary bg-background text-primary" : "border-border text-muted-foreground"}`}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValue("playbackEnabled", false)}
-                    className={`flex-1 p-3 rounded-sm border-2 font-bold text-sm transition-all ${!formData.playbackEnabled ? "border-primary bg-background text-primary" : "border-border text-muted-foreground"}`}
-                  >
-                    No
-                  </button>
-                </div>
-                {formData.playbackEnabled && (
-                  <div className="space-y-3 animate-in slide-in-from-top-2 pl-2">
-                    <Label className="text-xs font-bold">
-                      Will you provide the tracks, or use our Spotify playlists?
-                    </Label>
-                    <RadioGroup
-                      value={formData.playbackSource ?? ""}
-                      onValueChange={(v: any) => setValue("playbackSource", v)}
-                    >
-                      <div className="flex gap-3">
-                        <div className="flex items-center space-x-2 p-3 border rounded-sm bg-background flex-1">
-                          <RadioGroupItem value="client" id="pb1" />
-                          <Label htmlFor="pb1" className="text-sm">
-                            I'll provide tracks
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 p-3 border rounded-sm bg-background flex-1">
-                          <RadioGroupItem value="spotify" id="pb2" />
-                          <Label htmlFor="pb2" className="text-sm">
-                            Use your Spotify playlists
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                )}
               </div>
 
               {/* ── Voice of God ── */}
