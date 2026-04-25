@@ -459,14 +459,14 @@ export default function QuotePage() {
 
                   {/* Step 1 — Start */}
                   {currentStep === 1 && (
-                    <Card className="bg-muted/5 rounded-sm animate-in zoom-in-95 duration-500 space-y-8">
+                    <div className="animate-in zoom-in-95 duration-500 space-y-8">
                       <VenueEquipmentCheck />
                       <div className="flex justify-center">
                         <CtaButton type="button" onClick={() => goToStep(2)}>
                           Begin <ArrowRight className="w-5 h-5" />
                         </CtaButton>
                       </div>
-                    </Card>
+                    </div>
                   )}
 
                   {/* Step 2 — Services (Event Type + Streaming + Video + AV + Lighting + Photo) */}
