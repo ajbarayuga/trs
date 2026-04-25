@@ -21,6 +21,7 @@ interface StepFiveSuccessProps {
 }
 
 export function StepFiveSuccess({
+  onReset,
   quoteData,
   items,
   subtotal,
@@ -165,6 +166,19 @@ export function StepFiveSuccess({
           </div>
         </Card>
       </div>
+
+      {/* ── New quote link ── */}
+      {onReset && (
+        <div className="max-w-md mx-auto">
+          <button
+            type="button"
+            onClick={onReset}
+            className="w-full text-sm font-bold text-muted-foreground hover:text-primary transition-colors underline underline-offset-4"
+          >
+            + Create a new quote
+          </button>
+        </div>
+      )}
 
       {/* ── Production notes ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">

@@ -234,6 +234,18 @@ export default function QuotePage() {
     reset();
   }, [reset]);
 
+  const handleNewQuote = useCallback(() => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    suppressRedirect.current = false;
+    prevShouldRedirect.current = false;
+    setSnapshot(null);
+    setPath("quote");
+    setCurrentStep(1);
+    setMaxVisitedStep(1);
+    setHasSavedProgress(false);
+    reset();
+  }, [reset]);
+
   const handleRedirectRequest = useCallback(() => {
     if (suppressRedirect.current) return;
     setShowRedirectModal(true);
@@ -561,7 +573,7 @@ export default function QuotePage() {
                   {currentStep === 4 && snapshot && (
                     <div className="animate-in zoom-in-95 duration-500">
                       <StepFiveSuccess
-                        onReset={handleRedirect}
+                        onReset={handleNewQuote}
                         quoteData={snapshot.data}
                         items={snapshot.items}
                         subtotal={snapshot.subtotal}
