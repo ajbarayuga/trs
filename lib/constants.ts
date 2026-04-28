@@ -33,7 +33,7 @@ export const QUOTE_LIMITS = {
 // SOW bills screen labor (2 techs) and PJ labor (1 tech) separately.
 
 export const SERVICE_WINDOWS = {
-  streaming:               { setup: 180, strike:  90 },
+  streaming:               { setup:  90, strike:  30 }, // spec: 1.5h setup + 0.5h pack out (built-in or TRS)
   lecture:                 { setup:  90, strike:  45 },
   highlight:               { setup:  30, strike:  30 },
   paIndoor:                { setup:  90, strike:  45 },

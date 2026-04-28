@@ -231,22 +231,10 @@ export const calculateSOW = (data: QuoteFormData) => {
     const isBuiltIn = data.cameraSource === "built-in";
     const camCount = parseInt(data.cameraCount || "1") || 1;
 
-    addItem(
-      "Stream Control Kit",
-      "Encoder & Switcher System",
-      1,
-      "set",
-      R.equipment.streamControlKit,
-    );
-
+    // Built-in: venue provides cameras AND streaming system — no equipment from TRS
     if (!isBuiltIn) {
-      addItem(
-        "Camera Kit (Stream)",
-        `Camcorder ×${camCount}`,
-        camCount,
-        "set",
-        R.equipment.camcorderKit,
-      );
+      addItem("Stream Control Kit", "Encoder & Switcher System", 1, "set", R.equipment.streamControlKit);
+      addItem("Camera Kit (Stream)", `Camcorder ×${camCount}`, camCount, "set", R.equipment.camcorderKit);
     }
 
     // Stream Link: optional (self-serve if DIY is selected)
@@ -273,21 +261,15 @@ export const calculateSOW = (data: QuoteFormData) => {
   }
 
   // Required misc kit for onsite productions.
-  // Use half-day variant only for short, video-only live recordings.
+  // Spec: events ≤4h get Half Day rate; 5h+ get full rate.
   if (data.eventType === "live" && hasAnyCoreAVService) {
-    const isShortVideoOnlyJob =
-      hasAnyVideo &&
-      !isStreamingActive &&
-      !isPAActive &&
-      eventDuration <= 4;
+    const isHalfDayKit = eventDuration <= 4;
     addItem(
-      isShortVideoOnlyJob ? "AV Essential Kit (Half Day)" : "AV Essential Kit",
+      isHalfDayKit ? "AV Essential Kit (Half Day)" : "AV Essential Kit",
       "Required accessories for onsite production",
       1,
       "set",
-      isShortVideoOnlyJob
-        ? R.equipment.avEssentialKitHalfDay
-        : R.equipment.avEssentialKit,
+      isHalfDayKit ? R.equipment.avEssentialKitHalfDay : R.equipment.avEssentialKit,
     );
   }
 
