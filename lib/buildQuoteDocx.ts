@@ -292,6 +292,10 @@ function buildFinancialTable(
       pushItems(g.nonRecordingEquipItems);
     }
   }
+  if (g.preProductionItems.length) {
+    rows.push(sectionBannerRow("Pre-Production"));
+    pushItems(g.preProductionItems);
+  }
   if (g.postItems.length) {
     rows.push(sectionBannerRow("Post-Production"));
     pushItems(g.postItems);
@@ -326,31 +330,22 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
 
   if (hasStreaming) {
     out.push(serviceSubParagraph("Live Streaming"));
-    out.push(
-      bulletParagraph(
-        "STREAM KIT: Encoder, switcher, and stream control system",
-        "STREAM KIT:",
-      ),
-    );
-    out.push(
-      bulletParagraph(
-        `CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`,
-        "CAMERA SETUP:",
-      ),
-    );
-    if (data.streamGraphics) {
+    if (data.cameraSource === "built-in") {
       out.push(
         bulletParagraph(
-          "STREAM GRAPHICS: On-screen overlays and branding prepared",
-          "STREAM GRAPHICS:",
+          "We're livestreaming the event using the venue's cameras and streaming system.",
         ),
       );
-    }
-    if (!data.diyStream) {
+    } else {
+      if (!data.diyStream) {
+        out.push(bulletParagraph("Set up streaming"));
+      }
+      if (data.streamGraphics) {
+        out.push(bulletParagraph("Prepare on-screen name tags (aka Lower Thirds) for presenters"));
+      }
       out.push(
         bulletParagraph(
-          "STREAM LINK SETUP: Destination platform configured by our tech",
-          "STREAM LINK SETUP:",
+          "Livestream the event at the scheduled time using the venue's system, providing audio mixing, videography, and our camera/s for the video feed.",
         ),
       );
     }
@@ -383,13 +378,20 @@ function technicalScopeParagraphs(data: QuoteFormData): Paragraph[] {
         out.push(subBulletParagraph(`${data.videoTRSCameraAngles ?? 1} camera angle(s) - camcorder kit(s) provided by TRS`));
       }
       if (videoBuiltInActive && builtInEditing.includes("lecture")) {
-        out.push(subBulletParagraph("Using venue built-in cameras"));
+        out.push(subBulletParagraph("Record your event using the venue's built-in cameras."));
       }
       out.push(subBulletParagraph(`${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`));
       if (data.lecturePPT) {
         out.push(subBulletParagraph("Includes PowerPoint slide recording and integration"));
       }
-      out.push(subBulletParagraph("STANDARD VIDEO EDIT: Audio touch-ups, subtitles (.srt), lower thirds, intro/outro screens"));
+      if (!(data.videoBuiltInRawFootage || data.videoTRSRawFootage)) {
+        out.push(subBulletParagraph("Standard Video Edit: Ideal for events, concerts, lectures, and Zoom recordings. Delivered within 14 days, this includes audio touch-ups and mixing, subtitles (.srt), on-screen name tags (lower thirds), a branded intro screen, an outro with sponsor logos or credits, and copyright-cleared music."));
+      } else {
+        out.push(subBulletParagraph("Raw Footage: All unedited video files delivered as recorded from the event."));
+      }
+    }
+    if (builtInEditing.includes("social-short") || trsEditing.includes("social-short")) {
+      out.push(subBulletParagraph("Social Media Reel: A 1-minute reel featuring clip review and soundbite selection, clip trimming, captions, and reframing."));
     }
   }
 
@@ -829,9 +831,17 @@ export function buildQuoteDocxDocument(
         tr(" detailing the program", { sizePt: 11.5 }),
       ],
     }),
+    new Paragraph({
+      spacing: { after: 80 },
+      indent: { left: 400 },
+      children: [
+        tr("b.", { sizePt: 11.5 }),
+        tr(" Any PowerPoints and video clips that are part of the presentation", { sizePt: 11.5 }),
+      ],
+    }),
   ];
 
-  const subLabels = "bcdefghijklmnopqrstuvwxyz".split("");
+  const subLabels = "cdefghijklmnopqrstuvwxyz".split("");
   let subIdx = 0;
   const pushProvideSub = (body: string) => {
     const lab = subLabels[subIdx] ?? "?";
@@ -850,10 +860,33 @@ export function buildQuoteDocxDocument(
   if (builtInAVList.length) {
     pushProvideSub(`Access to venue's built-in AV: ${builtInAVList.join(", ")}`);
   }
-  if (hasStreaming) {
-    pushProvideSub(
-      "Internet upload speed of at least 15 mb/s per streaming platform",
+  if (hasStreaming && data.cameraSource !== "built-in") {
+    clientProvideChildren.push(
+      new Paragraph({
+        spacing: { before: 100, after: 80 },
+        children: [
+          tr("Please provide on the date of the production:", { bold: true, sizePt: 11.5 }),
+        ],
+      }),
     );
+    // Reset sub-label index to "a" for the day-of section
+    const dayOfSubLabels = "abcdefghijklmnopqrstuvwxyz".split("");
+    let dayOfSubIdx = 0;
+    const pushDayOfSub = (body: string) => {
+      const lab = dayOfSubLabels[dayOfSubIdx++] ?? "?";
+      clientProvideChildren.push(
+        new Paragraph({
+          spacing: { after: 80 },
+          indent: { left: 400 },
+          children: [
+            tr(`${lab}.`, { sizePt: 11.5 }),
+            tr(` ${body}`, { sizePt: 11.5 }),
+          ],
+        }),
+      );
+    };
+    pushDayOfSub("An audio feed into the recording setup from venue or the audio vendor");
+    pushDayOfSub("A stable internet connection, hardline ethernet (CAT 5) is strongly recommended for highest quality");
   }
   if (hasSiteVisit) {
     pushProvideSub(

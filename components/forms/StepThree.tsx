@@ -112,10 +112,10 @@ export function StepThree({ onRedirect }: { onRedirect: () => void }) {
                 {/* Built-in AV question — spec requires this inside the streaming form */}
                 <div className="space-y-3">
                   <Label className="font-bold">
-                    Does the venue have built-in AV for streaming?
+                    Does the venue have built-in AV for Zoom streaming, and would you like to use it?
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    If yes, we'll use the venue's cameras and streaming system — camera questions below are skipped.
+                    (If yes, you can skip the questions below.)
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <button

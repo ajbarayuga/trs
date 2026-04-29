@@ -89,23 +89,24 @@ export const calculateSOW = (data: QuoteFormData) => {
     const h = Math.max(0.5, totalHours);
     if (h < 8) {
       const hrs = Math.round(h * 2) / 2; // round to nearest 0.5h
-      addLaborItem("Production Lead", desc, hrs, "hrs", R.labor.productionLead);
+      addLaborItem("Production Lead (Hourly)", desc, hrs, "hrs", R.labor.productionLead);
     } else if (h <= 10) {
-      addLaborItem("Production Lead", `${desc} — Day Rate`, 1, "day", R.labor.plDayRate);
+      addLaborItem("Production Lead (Day Rate)", desc, 1, "day", R.labor.plDayRate);
     } else {
       const otHours = Math.round((h - 10) * 2) / 2;
-      const flatTotal = round(R.labor.plDayRate + otHours * R.labor.plOvertime);
+      addLaborItem("Production Lead (Day Rate)", desc, 1, "day", R.labor.plDayRate);
       addLaborItem(
-        "Production Lead",
-        `${desc} — Day Rate + ${otHours}h OT`,
-        1,
-        "flat",
-        flatTotal,
+        "Production Lead Overtime (Hourly)",
+        "Hourly rate to cover anything over 10 hr daily rate.",
+        otHours,
+        "hrs",
+        R.labor.plOvertime,
       );
     }
   };
 
   const eventDuration = data.hasDuration ? (data.durationHours ?? 4) : 4;
+  const isBuiltInStreaming = isStreamingActive && data.cameraSource === "built-in";
   const hasBuiltInAudio = data.builtInAV?.includes("audio");
   const hasBuiltInPJ = data.builtInAV?.includes("projector");
   const hasBuiltInTVs = data.builtInAV?.includes("tvs");
@@ -196,6 +197,7 @@ export const calculateSOW = (data: QuoteFormData) => {
       const talkCount = Math.max(1, data.lectureTalksCount ?? 1);
       const dur = data.lectureTalkDuration ?? "up to 1hr";
       const withPPT = data.lecturePPT ?? false;
+      const hasRawFootage = (data.videoBuiltInRawFootage ?? false) || (data.videoTRSRawFootage ?? false);
       const editRate =
         dur === "up to 3hr"
           ? withPPT ? R.postProduction.lectureEdit3hrWithPPT : R.postProduction.lectureEdit3hrNoPPT
@@ -215,35 +217,52 @@ export const calculateSOW = (data: QuoteFormData) => {
         }
       }
 
-      addItem(
-        "Lecture Editing",
-        `${talkCount} talk(s) × ${totalAngles} angle(s) — ${dur}${withPPT ? " w/ PPT" : ""}`,
-        talkCount * totalAngles,
-        "recording",
-        editRate,
-      );
+      // Raw footage suppresses all post-production editing
+      if (!hasRawFootage) {
+        const editName =
+          dur === "up to 3hr"
+            ? withPPT ? "3 hr lecture w/ PPT" : "Lecture or Event up to 3hrs, no PPT"
+            : dur === "up to 2hr"
+            ? withPPT ? "Lecture or Event w/ PPT, up to 2hrs" : "Lecture or Event, no PPT, up to 2hrs"
+            : withPPT ? "Lecture w/ PPT, up to 1 hr" : "Lecture or Event - No PPT, up to 1 hr runtime";
+        const editDesc = withPPT
+          ? "Standard edit package. Details in Technical Scope. Includes Power-Point slides. Price per camera angle"
+          : "Standard edit package. Details in Technical Scope. This package can be used for panel discussions. Price per camera angle";
+        addItem(editName, editDesc, talkCount * totalAngles, "edit", editRate);
+      }
     }
   }
 
   // ── 2. LIVE STREAMING ────────────────────────────────────────────────────
 
   if (isStreamingActive) {
-    const isBuiltIn = data.cameraSource === "built-in";
     const camCount = parseInt(data.cameraCount || "1") || 1;
 
-    // Built-in: venue provides cameras AND streaming system — no equipment from TRS
-    if (!isBuiltIn) {
-      addItem("Stream Control Kit", "Encoder & Switcher System", 1, "set", R.equipment.streamControlKit);
-      addItem("Camera Kit (Stream)", `Camcorder ×${camCount}`, camCount, "set", R.equipment.camcorderKit);
+    // Our equipment: TRS provides cameras AND streaming system
+    if (!isBuiltInStreaming) {
+      addItem(
+        "Stream Kit",
+        "Includes high-performance computer, video switcher/encoder, HDMI cable for up to 4 video inputs, extra laptop to monitor stream output, extension cord, power strip",
+        1,
+        "set",
+        R.equipment.streamControlKit,
+      );
+      addItem(
+        "Camcorder Kit",
+        "Includes camcorder, extra tall tripod (8'), XLR audio cable, HDMI cable, extension cord, power strip, and SD cards",
+        camCount,
+        "set",
+        R.equipment.camcorderKit,
+      );
     }
 
     // Stream Link: optional (self-serve if DIY is selected)
     if (!data.diyStream) {
       addItem(
-        "Zoom Setup",
-        "Destination platform setup and host config",
+        "Stream Link Creation",
+        "Creation and configuration of the streaming or virtual event link (e.g., webinar or meeting platform). This includes host account setup, adjusting appropriate event settings, and coordinating invitations for panelists or guests.",
         1,
-        "flat",
+        "prep",
         R.streaming.streamLinkSetup,
       );
     }
@@ -252,9 +271,9 @@ export const calculateSOW = (data: QuoteFormData) => {
     if (data.streamGraphics) {
       addItem(
         "Stream Graphics Prep",
-        "On-screen overlays and branding",
+        "We create a title screen and lower thirds for your production, following your brand's style guide. If you would like to show more than 25 names onscreen, there may be an additional charge.",
         1,
-        "flat",
+        "prep",
         R.streaming.streamGraphicsPrep,
       );
     }
@@ -264,9 +283,13 @@ export const calculateSOW = (data: QuoteFormData) => {
   // Spec: events ≤4h get Half Day rate; 5h+ get full rate.
   if (data.eventType === "live" && hasAnyCoreAVService) {
     const isHalfDayKit = eventDuration <= 4;
+    const avKitDesc =
+      "Includes a Laptop, power-point clicker, HDMI cable, video scaler & voltage regulator, aux cord, USB adapters, thumbdrive, batteries, Humbuster noise reducer for audio signals, and audio cable adapters. Required for all onsite productions";
     addItem(
       isHalfDayKit ? "AV Essential Kit (Half Day)" : "AV Essential Kit",
-      "Required accessories for onsite production",
+      isHalfDayKit
+        ? `${avKitDesc}. Half Day Rate applies to events 4 hours or less`
+        : avKitDesc,
       1,
       "set",
       isHalfDayKit ? R.equipment.avEssentialKitHalfDay : R.equipment.avEssentialKit,
@@ -277,8 +300,8 @@ export const calculateSOW = (data: QuoteFormData) => {
 
   if (activeShortsCount > 0) {
     addItem(
-      "Social Shorts Editing",
-      `Vertical cutdowns ×${activeShortsCount}`,
+      "Social Media Reel",
+      "A 1-minute social media reel.",
       activeShortsCount,
       "short",
       R.postProduction.socialShortEdit,
@@ -570,7 +593,7 @@ export const calculateSOW = (data: QuoteFormData) => {
       maxStrikeMins = Math.max(maxStrikeMins, w.strike);
     };
 
-    if (isStreamingActive) trackWindow(SW.streaming);
+    if (isStreamingActive) trackWindow(isBuiltInStreaming ? SW.streamingBuiltIn : SW.streamingOurEquip);
     if (isPAActive) trackWindow(data.setting === "outdoor" ? SW.paOutdoor : SW.paIndoor);
     if (hasLecture) trackWindow(SW.lecture);
     if (hasHighlight) trackWindow(SW.highlight);
@@ -593,7 +616,22 @@ export const calculateSOW = (data: QuoteFormData) => {
     const fmtMins = (m: number) =>
       m >= 60 ? `${m / 60}h` : `${m}min`;
     const plHours = maxSetupMins / 60 + eventDuration + maxStrikeMins / 60;
-    billProductionLead(plHours, `${fmtMins(maxSetupMins)} setup / ${fmtMins(maxStrikeMins)} strike`);
+    billProductionLead(
+      plHours,
+      "Production Leads are cross-trained AV professionals with experience leading projects. For solo projects, we recommend hiring a production lead because they have the experience and self-management skills to offer you turn-key service.",
+    );
+
+    // Stream Tech: non-built-in streaming only. Always billed at day rate.
+    // OT applies if total on-site hours exceed 10h (same window as Production Lead).
+    if (isStreamingActive && !isBuiltInStreaming) {
+      const stDesc =
+        "Stream Techs have experience producing hybrid events. They are familiar with the major streaming platforms, and have experience switching cameras, cuing graphics, and media playback in real time. They will monitor the stream output from a 2nd computer throughout the event, to ensure the remote audience is receiving a quality output.";
+      addLaborItem("Stream Tech (Day Rate)", stDesc, 1, "day", R.labor.streamTechDayRate);
+      if (plHours > 10) {
+        const stOtHours = Math.round((plHours - 10) * 2) / 2;
+        addLaborItem("Stream Tech Overtime (Hourly)", stDesc, stOtHours, "hrs", R.labor.streamTechOT);
+      }
+    }
   }
 
   // ── 7. TRUCKING ──────────────────────────────────────────────────────────

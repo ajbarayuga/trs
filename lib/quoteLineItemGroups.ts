@@ -26,6 +26,7 @@ export function isRecordingEquipment(item: LineItem): boolean {
 export interface GroupedLineItems {
   laborItems: LineItem[];
   equipItems: LineItem[];
+  preProductionItems: LineItem[];
   postItems: LineItem[];
   discountItems: LineItem[];
   miscOtherItems: LineItem[];
@@ -56,10 +57,14 @@ export function groupLineItems(items: LineItem[]): GroupedLineItems {
         i.unit === "unit" ||
         i.unit === "service"),
   );
+  const preProductionItems = items.filter(
+    (i) => !laborItems.includes(i) && !equipItems.includes(i) && i.unit === "prep",
+  );
   const postItems = items.filter(
     (i) =>
       !laborItems.includes(i) &&
       !equipItems.includes(i) &&
+      !preProductionItems.includes(i) &&
       (i.unit === "edit" ||
         i.unit === "talk" ||
         i.unit === "short" ||
@@ -70,6 +75,7 @@ export function groupLineItems(items: LineItem[]): GroupedLineItems {
     (i) =>
       !laborItems.includes(i) &&
       !equipItems.includes(i) &&
+      !preProductionItems.includes(i) &&
       !postItems.includes(i),
   );
   const discountItems = otherItems.filter(isDiscountLine);
@@ -80,6 +86,7 @@ export function groupLineItems(items: LineItem[]): GroupedLineItems {
   return {
     laborItems,
     equipItems,
+    preProductionItems,
     postItems,
     discountItems,
     miscOtherItems,

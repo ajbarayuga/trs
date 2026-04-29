@@ -33,8 +33,10 @@ export const QUOTE_LIMITS = {
 // SOW bills screen labor (2 techs) and PJ labor (1 tech) separately.
 
 export const SERVICE_WINDOWS = {
-  streaming:               { setup:  90, strike:  30 }, // spec: 1.5h setup + 0.5h pack out (built-in or TRS)
-  lecture:                 { setup:  90, strike:  45 },
+  // Streaming has two variants — pick based on cameraSource in each caller:
+  streamingBuiltIn:        { setup:  90, strike:  30 }, // venue cameras/system: 1.5h setup + 0.5h pack out
+  streamingOurEquip:       { setup: 180, strike:  90 }, // TRS cameras/system:   3h setup  + 1.5h pack out
+  lecture:                 { setup:  90, strike:  30 }, // 1.5h setup + 0.5h pack out
   highlight:               { setup:  30, strike:  30 },
   paIndoor:                { setup:  90, strike:  45 },
   paOutdoor:               { setup: 120, strike:  60 },

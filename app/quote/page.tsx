@@ -9,7 +9,7 @@ import { shouldRedirectToSales } from "@/lib/quoteRedirect";
 import { DEFAULT_DOORS_TIME, DEFAULT_START_TIME } from "@/lib/quoteDefaults";
 import { ProgressBar } from "@/components/forms/ProgressBar";
 import NotSure from "@/components/forms/NotSure";
-import { StepTwo, VenueEquipmentCheck } from "@/components/forms/StepTwo";
+import { StepTwo } from "@/components/forms/StepTwo";
 import { StepThree } from "@/components/forms/StepThree";
 import { StepFourAV } from "@/components/forms/StepFourAV";
 import { StepFiveDetails } from "@/components/forms/StepFourSummary";
@@ -472,7 +472,9 @@ export default function QuotePage() {
                   {/* Step 1 — Start */}
                   {currentStep === 1 && (
                     <div className="animate-in zoom-in-95 duration-500 space-y-8">
-                      <VenueEquipmentCheck />
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Answer a few questions about your event and we'll generate a custom production estimate. Takes about 3 minutes.
+                      </p>
                       <div className="flex justify-center">
                         <CtaButton type="button" onClick={() => goToStep(2)}>
                           Begin <ArrowRight className="w-5 h-5" />

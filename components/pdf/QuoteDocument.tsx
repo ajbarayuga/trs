@@ -906,6 +906,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
   const {
     laborItems,
     equipItems,
+    preProductionItems,
     postItems,
     discountItems,
     miscOtherItems,
@@ -1029,6 +1030,12 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
               detailing the program
             </Text>
           </View>
+          <View style={s.clientProvideIndentRow}>
+            <Text style={s.clientProvideIndentLabel}>{nextSubLabel()}</Text>
+            <Text style={s.clientProvideIndentText}>
+              Any PowerPoints and video clips that are part of the presentation
+            </Text>
+          </View>
           {builtInAVList.length > 0 && (
             <View style={s.clientProvideIndentRow}>
               <Text style={s.clientProvideIndentLabel}>{nextSubLabel()}</Text>
@@ -1037,13 +1044,27 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
               </Text>
             </View>
           )}
-          {hasStreaming && (
-            <View style={s.clientProvideIndentRow}>
-              <Text style={s.clientProvideIndentLabel}>{nextSubLabel()}</Text>
-              <Text style={s.clientProvideIndentText}>
-                Internet upload speed of at least 15 mb/s per streaming platform
-              </Text>
-            </View>
+          {hasStreaming && data.cameraSource !== "built-in" && (
+            <>
+              <View style={[s.clientProvideRow, { marginTop: 6 }]}>
+                <Text style={s.clientProvideNum}>{" "}</Text>
+                <Text style={[s.clientProvideText, { fontFamily: quotePdfFontFamily.body, fontWeight: 700 }]}>
+                  Please provide on the date of the production:
+                </Text>
+              </View>
+              <View style={s.clientProvideIndentRow}>
+                <Text style={s.clientProvideIndentLabel}>a.</Text>
+                <Text style={s.clientProvideIndentText}>
+                  An audio feed into the recording setup from venue or the audio vendor
+                </Text>
+              </View>
+              <View style={s.clientProvideIndentRow}>
+                <Text style={s.clientProvideIndentLabel}>b.</Text>
+                <Text style={s.clientProvideIndentText}>
+                  A stable internet connection, hardline ethernet (CAT 5) is strongly recommended for highest quality
+                </Text>
+              </View>
+            </>
           )}
           {hasSiteVisit && (
             <View style={s.clientProvideIndentRow}>
@@ -1062,18 +1083,18 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
         {hasStreaming && (
           <>
             <ServiceSubHeading title="Live Streaming" />
-            <BulletRow
-              text="STREAM KIT: Encoder, switcher, and stream control system"
-              bold
-            />
-            <BulletRow
-              text={`CAMERA SETUP: ${data.cameraCount ?? "1"} camera(s) - ${data.cameraSource === "built-in" ? "using venue built-in cameras" : "camcorder kit(s)"}`}
-            />
-            {data.streamGraphics && (
-              <BulletRow text="STREAM GRAPHICS: On-screen overlays and branding prepared" />
-            )}
-            {!data.diyStream && (
-              <BulletRow text="STREAM LINK SETUP: Destination platform configured by our tech" />
+            {data.cameraSource === "built-in" ? (
+              <BulletRow text="We're livestreaming the event using the venue's cameras and streaming system." />
+            ) : (
+              <>
+                {!data.diyStream && (
+                  <BulletRow text="Set up streaming" />
+                )}
+                {data.streamGraphics && (
+                  <BulletRow text="Prepare on-screen name tags (aka Lower Thirds) for presenters" />
+                )}
+                <BulletRow text="Livestream the event at the scheduled time using the venue's system, providing audio mixing, videography, and our camera/s for the video feed." />
+              </>
             )}
           </>
         )}
@@ -1121,7 +1142,7 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                   />
                 )}
                 {videoBuiltInActive && builtInEditing.includes("lecture") && (
-                  <SubBulletRow text="Using venue built-in cameras" />
+                  <SubBulletRow text="Record your event using the venue's built-in cameras." />
                 )}
                 <SubBulletRow
                   text={`${data.lectureTalksCount ?? 1} talk(s) - ${data.lectureTalkDuration ?? "up to 1hr"} each`}
@@ -1129,8 +1150,16 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                 {data.lecturePPT && (
                   <SubBulletRow text="Includes PowerPoint slide recording and integration" />
                 )}
-                <SubBulletRow text="STANDARD VIDEO EDIT: Audio touch-ups, subtitles (.srt), lower thirds, intro/outro screens" />
+                {!(data.videoBuiltInRawFootage || data.videoTRSRawFootage) && (
+                  <SubBulletRow text="Standard Video Edit: Ideal for events, concerts, lectures, and Zoom recordings. Delivered within 14 days, this includes audio touch-ups and mixing, subtitles (.srt), on-screen name tags (lower thirds), a branded intro screen, an outro with sponsor logos or credits, and copyright-cleared music." />
+                )}
+                {(data.videoBuiltInRawFootage || data.videoTRSRawFootage) && (
+                  <SubBulletRow text="Raw Footage: All unedited video files delivered as recorded from the event." />
+                )}
               </>
+            )}
+            {(builtInEditing.includes("social-short") || trsEditing.includes("social-short")) && (
+              <SubBulletRow text="Social Media Reel: A 1-minute reel featuring clip review and soundbite selection, clip trimming, captions, and reframing." />
             )}
           </>
         )}
@@ -1349,6 +1378,21 @@ export function QuoteDocument({ data, items, subtotal }: QuoteDocumentProps) {
                   ))}
                 </>
               )}
+            </>
+          )}
+
+          {/* Pre-Production */}
+          {preProductionItems.length > 0 && (
+            <>
+              <View style={s.tableSectionRow}>
+                <Text style={s.tableSectionLabel}>Pre-Production</Text>
+              </View>
+              {preProductionItems.map((item, idx) => (
+                <FinancialDataRow
+                  key={`pre-${item.name}-${idx}`}
+                  item={item}
+                />
+              ))}
             </>
           )}
 

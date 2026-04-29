@@ -41,6 +41,8 @@ export const RATES = {
     productionLead: 121.5297, // 2026: PL hourly rate (< 8h tier)
     plDayRate: 995.0,         // 2026: PL day rate flat (8–10h tier)
     plOvertime: 180.25,       // 2026: PL overtime per hour over 10h
+    streamTechDayRate: 849.75, // Stream Tech day rate (always billed, non-built-in streaming)
+    streamTechOT: 128.75,      // Stream Tech overtime per hour over 10h
   },
 
   // ── Equipment (flat / per-unit rates) ────────────────────────────────────

@@ -118,7 +118,8 @@ function getServiceWindows(data: QuoteFormData): TimeWindow[] {
 
   // ── Live Streaming ──────────────────────────────────────────────────────────
   if (isStreamingActive) {
-    windows.push(SW.streaming);
+    const isBuiltInStreaming = data.cameraSource === "built-in";
+    windows.push(isBuiltInStreaming ? SW.streamingBuiltIn : SW.streamingOurEquip);
   }
 
   // ── Lecture / Panel ─────────────────────────────────────────────────────────
@@ -166,8 +167,8 @@ function getServiceWindows(data: QuoteFormData): TimeWindow[] {
   if (lighting.includes("uplights-stage")) {
     const kits = Math.max(1, Math.ceil((data.stageWashWidth ?? 10) / 10));
     windows.push({
-      setup: Math.min(SW.stageUplightsPerKit.setup * kits, SW.streaming.setup),
-      strike: Math.min(SW.stageUplightsPerKit.strike * kits, SW.streaming.strike),
+      setup: Math.min(SW.stageUplightsPerKit.setup * kits, SW.streamingOurEquip.setup),
+      strike: Math.min(SW.stageUplightsPerKit.strike * kits, SW.streamingOurEquip.strike),
     });
   }
 
@@ -177,8 +178,8 @@ function getServiceWindows(data: QuoteFormData): TimeWindow[] {
   if (lighting.includes("wireless-uplights")) {
     const packs = Math.max(1, Math.floor((data.wirelessUplightCount ?? 6) / 6));
     windows.push({
-      setup: Math.min(SW.wirelessUplightsPerPack.setup * packs, SW.streaming.setup),
-      strike: Math.min(SW.wirelessUplightsPerPack.strike * packs, SW.streaming.strike),
+      setup: Math.min(SW.wirelessUplightsPerPack.setup * packs, SW.streamingOurEquip.setup),
+      strike: Math.min(SW.wirelessUplightsPerPack.strike * packs, SW.streamingOurEquip.strike),
     });
   }
 
